@@ -1,0 +1,19 @@
+{% extends 'components.html' %}
+{% block main_content %}
+    <h3 class="text-center">ПротоСеть</h3>
+    <h1 class="text-center">Вход</h1>
+    <form method="post">
+        <div class="form-group mb-5">
+            <label for="login">Введи свой логин</label>
+            <input class="form-control" id="login" name="login">
+        </div>
+        <div class="form-group mb-5">
+            <label for="password">Введи пароль</label>
+            <input type="password" class="form-control" id="password" name="password">
+        </div>
+        <div class="text-center mb-5">
+            <button type="submit" class="btn btn-info">Войти</button>
+        </div>
+    </form>
+
+{% endblock %}
