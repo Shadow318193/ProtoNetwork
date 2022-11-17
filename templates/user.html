@@ -1,4 +1,48 @@
 {% extends 'base.html' %}
 {% block main_content %}
-    <h1 class="center">{{ login }}</h1>
+    <div class="row pb-3">
+        <div class="col">
+            {% if user.avatar == None %}
+                <img style="max-height: 80%" class="img-fluid rectangle-avatar img-thumbnail" src="/static/media/default.png" height="10%">
+            {% else %}
+                <img style="max-height: 80%" class="img-fluid rectangle-avatar img-thumbnail" src="/static/media/from_users/avatars/{{ user.avatar }}" height="10%">
+            {% endif %}
+        </div>
+        <div class="col">
+            {% if user.is_teacher %}
+                <h1 class="text-end">{{ user.surname }} {{ user.name }} {{ user.patronymic }}</h1>
+                <h2 class="text-end" style="color: #ff0000">Учитель</h2>
+            {% else %}
+                <h1 class="text-end">{{ user.surname }} {{ user.name }}</h1>
+            {% endif %}
+            <h4 class="text-end">Логин: @{{ user.login }}</h4>
+        </div>
+    </div>
+    <div class="row">
+        <div class="col">
+            {% if current_user.is_authenticated %}
+            {% if current_user.login == user.login %}
+            <a href="/settings" class="btn btn-info">Настройки аккаунта</a>
+            {% else %}
+            <button type="submit" class="btn btn-info">Отправить заявку в друзья</button>
+            {% endif %}
+            {% endif %}
+        </div>
+        <div class="col">
+            {% if current_user.is_authenticated and current_user.login == user.login %}
+                <h3>Обо мне:</h3>
+                <form method="post">
+                    <div class="row pb-3">
+                        <textarea rows="5" placeholder="Напиши о себе" id="about_input" name="about_input">{{ user.about }}</textarea>
+                    </div>
+                    <div class="row">
+                        <button type="submit" class="btn btn-info btn-lg" id="about_button" name="about_button">Обновить описание</button>
+                    </div>
+                </form>
+            {% elif user.about %}
+                <h3>Обо мне:</h3>
+                <p>{{ user.about }}</p>
+            {% endif %}
+        </div>
+    </div>
 {% endblock %}

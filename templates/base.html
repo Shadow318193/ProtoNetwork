@@ -16,7 +16,7 @@
         <form class="col-12 col-lg-auto mb-3 mb-lg-0 me-lg-3" role="search">
           <input type="search" class="form-control form-control-dark text-bg-dark" placeholder="Искать..." aria-label="Search">
         </form>
-            {% if is_authenticated %}
+            {% if current_user.is_authenticated %}
                 <div class="text-end">
                   <a href="/logout" class="btn btn-outline-light me-2">Выйти</a>
                 </div>
@@ -29,5 +29,8 @@
       </div>
     </div>
     </header>
+    {% for cat, msg in get_flashed_messages(True) %}
+    <div class="alert alert-{{ cat }} text-center">{{ msg }}</div>
+    {% endfor %}
 
 {% endblock %}

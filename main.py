@@ -6,6 +6,8 @@ from werkzeug.security import generate_password_hash, check_password_hash
 from data import db_session
 from data.user import User
 
+import datetime
+
 app = Flask(__name__)
 login_manager = LoginManager()
 login_manager.init_app(app)
@@ -13,9 +15,28 @@ login_manager.login_message = "Пожалуйста, войдите, что бы
 
 
 @login_manager.user_loader
-def load_user(user_id):
+def load_user(user_id: int):
     db_sess = db_session.create_session()
     return db_sess.query(User).filter(User.id == user_id).first()
+
+
+def password_is_correct(password: str):
+    if password.islower() or password.isupper() or len(password) < 8:
+        return False
+    for i in password.lower():
+        if i not in "abcdefghijklmnopqrstuvwxyzабвгдеёжзийклмнопрстуфхцчшщъыьэюя0123456789!@$#_":
+            return False
+    digits = ""
+    special = ""
+    for i in "0123456789":
+        if i in password:
+            digits += i
+    for i in "!@$#":
+        if i in password:
+            special += i
+    if not special or not digits:
+        return False
+    return True
 
 
 app.config['SECRET_KEY'] = 'secret_key'
@@ -25,6 +46,8 @@ app.config['MAX_CONTENT_LENGTH'] = 64 * 1024 * 1024
 
 @app.route("/", methods=["GET"])
 def index():
+    if current_user.is_authenticated:
+        return redirect("/user/" + current_user.login)
     return render_template("index.html")
 
 
@@ -33,8 +56,16 @@ def signup():
     if request.method == "GET":
         return render_template("signup.html")
     elif request.method == "POST":
-        if request.form["password"] == request.form["password_sec"]:
+        if request.form["password"] == request.form["password_sec"] and password_is_correct(request.form["password"]):
             db_sess = db_session.create_session()
+            existing_user = db_sess.query(User).filter(User.login == request.form["login"]).first()
+            if existing_user:
+                flash("Ошибка регистрации: кто-то уже есть с таким логином", "danger")
+                return redirect("/signup")
+            existing_user = db_sess.query(User).filter(User.email == request.form["email"]).first()
+            if existing_user:
+                flash("Ошибка регистрации: кто-то уже есть с такой почтой", "danger")
+                return redirect("/signup")
             user = User()
             user.name = request.form["name"]
             user.surname = request.form["surname"]
@@ -44,25 +75,34 @@ def signup():
             db_sess.add(user)
             db_sess.commit()
             login_user(user)
-            flash('Успешная регистрация', "success")
-            return redirect(f"/user/{user.login}")
+            user.last_auth = datetime.datetime.now()
+            flash("Регистрация прошла успешно!", "success")
+            return redirect("/user/" + user.login)
+        elif password_is_correct(request.form["password"]):
+            flash("Ошибка регистрации: пароль не повторён", "danger")
+            return redirect("/signup")
         else:
-            return "пароль введён некорректно"
+            flash("Ошибка регистрации: пароль не удовлетворяет требованию", "danger")
+            return redirect("/signup")
 
 
 @app.route("/login", methods=["POST", "GET"])
 def login():
     if request.method == "GET":
+        if current_user.is_authenticated:
+            return redirect("/user/" + current_user.login)
         return render_template("login.html")
     elif request.method == "POST":
         db_sess = db_session.create_session()
         user = db_sess.query(User).filter(User.login == request.form["login"]).first()
-        if check_password_hash(user.hashed_password, request.form["password"]):
+        if user and check_password_hash(user.hashed_password, request.form["password"]):
             login_user(user)
-            flash('Успешный вход', "success")
-            return redirect(f"/user/{user.login}")
+            user.last_auth = datetime.datetime.now()
+            flash("Успешный вход", "success")
+            return redirect("/user/" + user.login)
         else:
-            return "пароль введён некорректно"
+            flash("Ошибка входа: неверный пароль", "danger")
+            return redirect("/login")
 
 
 @login_required
@@ -72,14 +112,27 @@ def logout():
     return redirect("/")
 
 
-@app.route("/user/<username>", methods=["GET"])
+@app.route("/user/<username>", methods=["POST", "GET"])
 def user_page(username):
     db_sess = db_session.create_session()
     user = db_sess.query(User).filter(User.login == username).first()
     if user:
-        return render_template("user.html", login=username, is_authenticated=current_user.is_authenticated)
+        if request.method == "GET":
+            return render_template("user.html", user=user, current_user=current_user)
+        elif request.method == "POST":
+            if current_user == user and "about_button" in request.form:
+                user.about = request.form["about_input"]
+                db_sess.commit()
+                flash("Описание успешно обновлено", "success")
+                return redirect("/user/" + username)
     else:
         abort(404)
+
+
+@app.errorhandler(401)
+def e401():
+    flash("Данную страницу можно смотреть только авторизованным пользователям", "warning")
+    return redirect("/login")
 
 
 if __name__ == "__main__":

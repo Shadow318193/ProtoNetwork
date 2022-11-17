@@ -2,33 +2,36 @@
 {% block main_content %}
     <h3 class="text-center">ПротоСеть</h3>
     <h1 class="text-center">Регистрация</h1>
+    {% for cat, msg in get_flashed_messages(True) %}
+    <div class="alert alert-{{ cat }} text-center">{{ msg }}</div>
+    {% endfor %}
     <form method="post">
         <div class="form-group mb-5">
             <label for="name">Введи своё имя</label>
-            <input class="form-control" id="name" name="name">
+            <input class="form-control" id="name" name="name" placeholder="Имя">
         </div>
         <div class="form-group mb-5">
             <label for="surname">Введи свою фамилию</label>
-            <input class="form-control" id="surname" name="surname">
+            <input class="form-control" id="surname" name="surname" placeholder="Фамилия">
         </div>
         <div class="form-group mb-5">
-            <label for="email">Введи свою почту (по желанию)</label>
-            <input class="form-control" id="email" name="email">
+            <label for="email">Введи свою электронную почту (по желанию)</label>
+            <input type="email" class="form-control" id="email" name="email" placeholder="Электронная почта">
         </div>
         <div class="form-group mb-5">
             <label for="login">Придумай себе логин</label>
-            <input class="form-control" id="login" name="login">
+            <input class="form-control" id="login" name="login" placeholder="Логин">
         </div>
         <div class="form-group mb-5">
-            <label for="password">Придумай себе пароль</label>
-            <input type="password" class="form-control" id="password" name="password">
+            <label for="password">Придумай себе пароль (должен содержать не менее 8 символов, большие и маленькие буквы, один из символов "!", "@", "$", "#")</label>
+            <input type="password" class="form-control" id="password" name="password" placeholder="Пароль">
         </div>
         <div class="form-group mb-5">
             <label for="password_sec">Повтори этот пароль</label>
-            <input type="password" class="form-control" id="password_sec" name="password_sec">
+            <input type="password" class="form-control" id="password_sec" name="password_sec" placeholder="Повтори пароль">
         </div>
         <div class="text-center mb-5">
-            <button type="submit" class="btn btn-info">Закончить</button>
+            <button type="submit" class="btn btn-info btn-lg">Закончить</button>
         </div>
     </form>
 
