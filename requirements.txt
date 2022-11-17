@@ -1,3 +1,4 @@
 SQLAlchemy~=1.4.43
 Flask~=2.2.2
 Werkzeug~=2.2.2
+flask-login~=0.6.2
