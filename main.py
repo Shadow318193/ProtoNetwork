@@ -60,6 +60,23 @@ def index():
     return render_template("index.html")
 
 
+@app.route("/user/<username>", methods=["POST", "GET"])
+def user_page(username):
+    db_sess = db_session.create_session()
+    user = db_sess.query(User).filter(User.login == username).first()
+    if user:
+        if request.method == "GET":
+            return render_template("user.html", user=user, current_user=current_user)
+        elif request.method == "POST":
+            if current_user == user and "about_button" in request.form:
+                user.about = request.form["about_input"]
+                db_sess.commit()
+                flash("Описание успешно обновлено", "success")
+                return redirect("/user/" + username)
+    else:
+        abort(404)
+
+
 @app.route("/signup", methods=["POST", "GET"])
 def signup():
     if request.method == "GET":
@@ -121,7 +138,10 @@ def login():
             user.last_auth = datetime.datetime.now()
             flash("Успешный вход", "success")
             return redirect("/user/" + user.login)
-        else:
+        elif not user:
+            flash("Ошибка входа: неверный логин", "danger")
+            return redirect("/login")
+        elif not check_password_hash(user.hashed_password, request.form["password"]):
             flash("Ошибка входа: неверный пароль", "danger")
             return redirect("/login")
 
@@ -130,30 +150,22 @@ def login():
 @login_required
 def logout():
     logout_user()
+    if request.args.get("from"):
+        return redirect(request.args.get("from"))
     return redirect("/")
-
-
-@app.route("/user/<username>", methods=["POST", "GET"])
-def user_page(username):
-    db_sess = db_session.create_session()
-    user = db_sess.query(User).filter(User.login == username).first()
-    if user:
-        if request.method == "GET":
-            return render_template("user.html", user=user, current_user=current_user)
-        elif request.method == "POST":
-            if current_user == user and "about_button" in request.form:
-                user.about = request.form["about_input"]
-                db_sess.commit()
-                flash("Описание успешно обновлено", "success")
-                return redirect("/user/" + username)
-    else:
-        abort(404)
 
 
 @app.errorhandler(401)
 def e401(code):
     print(code)
     flash("[Ошибка 401] Данную страницу можно смотреть только авторизованным пользователям", "warning")
+    return redirect("/login")
+
+
+@app.errorhandler(403)
+def e401(code):
+    print(code)
+    flash("[Ошибка 403] Данную страницу можно смотреть только администраторам", "warning")
     return redirect("/login")
 
 
