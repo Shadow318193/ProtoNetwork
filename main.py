@@ -20,6 +20,15 @@ def load_user(user_id: int):
     return db_sess.query(User).filter(User.id == user_id).first()
 
 
+def login_is_correct(login_s: str):
+    if not login_s.replace(" ", "") or len(login_s) > 32:
+        return False
+    for i in login_s.lower():
+        if i not in "abcdefghijklmnopqrstuvwxyz0123456789_":
+            return False
+    return True
+
+
 def password_is_correct(password: str):
     if password.islower() or password.isupper() or len(password) < 8:
         return False
@@ -56,6 +65,18 @@ def signup():
     if request.method == "GET":
         return render_template("signup.html")
     elif request.method == "POST":
+        if not request.form["name"].replace(" ", "") or len(request.form["name"]) > 32:
+            flash("Ошибка регистрации: имя не удовлетворяет требованию", "danger")
+            return redirect("/signup")
+        elif not request.form["surname"].replace(" ", "") or len(request.form["surname"]) > 32:
+            flash("Ошибка регистрации: фамилия не удовлетворяет требованию", "danger")
+            return redirect("/signup")
+        elif not request.form["login"].replace(" ", "") or not login_is_correct(request.form["login"]):
+            flash("Ошибка регистрации: логин не удовлетворяет требованию", "danger")
+            return redirect("/signup")
+        elif not request.form["email"].replace(" ", "") or len(request.form["surname"]) > 64:
+            flash("Ошибка регистрации: электронная почта не удовлетворяет требованию", "danger")
+            return redirect("/signup")
         if request.form["password"] == request.form["password_sec"] and password_is_correct(request.form["password"]):
             db_sess = db_session.create_session()
             existing_user = db_sess.query(User).filter(User.login == request.form["login"]).first()
