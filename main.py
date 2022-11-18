@@ -74,7 +74,7 @@ def signup():
         elif not request.form["login"].replace(" ", "") or not login_is_correct(request.form["login"]):
             flash("Ошибка регистрации: логин не удовлетворяет требованию", "danger")
             return redirect("/signup")
-        elif not request.form["email"].replace(" ", "") or len(request.form["surname"]) > 64:
+        elif len(request.form["email"]) > 64:
             flash("Ошибка регистрации: электронная почта не удовлетворяет требованию", "danger")
             return redirect("/signup")
         if request.form["password"] == request.form["password_sec"] and password_is_correct(request.form["password"]):
