@@ -152,7 +152,7 @@ def user_page(username):
 
 @app.errorhandler(401)
 def e401():
-    flash("Данную страницу можно смотреть только авторизованным пользователям", "warning")
+    flash("[Ошибка 401] Данную страницу можно смотреть только авторизованным пользователям", "warning")
     return redirect("/login")
 
 
