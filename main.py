@@ -126,8 +126,8 @@ def login():
             return redirect("/login")
 
 
-@login_required
 @app.route("/logout")
+@login_required
 def logout():
     logout_user()
     return redirect("/")
@@ -151,7 +151,8 @@ def user_page(username):
 
 
 @app.errorhandler(401)
-def e401():
+def e401(code):
+    print(code)
     flash("[Ошибка 401] Данную страницу можно смотреть только авторизованным пользователям", "warning")
     return redirect("/login")
 
