@@ -11,7 +11,7 @@ import datetime
 app = Flask(__name__)
 login_manager = LoginManager()
 login_manager.init_app(app)
-login_manager.login_message = "Пожалуйста, войдите, что бы получить доступ к этой странице."
+login_manager.login_message = "Данную страницу можно смотреть только авторизованным пользователям"
 
 
 @login_manager.user_loader
@@ -158,7 +158,7 @@ def logout():
 @app.errorhandler(401)
 def e401(code):
     print(code)
-    flash("[Ошибка 401] Данную страницу можно смотреть только авторизованным пользователям", "warning")
+    flash("[Ошибка 401] " + login_manager.login_message, "warning")
     return redirect("/login")
 
 
@@ -171,4 +171,4 @@ def e401(code):
 
 if __name__ == "__main__":
     db_session.global_init("db/social_network.db")
-    app.run(host="0.0.0.0", port=8080)
+    app.run(host="127.0.0.1", port=8080)

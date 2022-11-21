@@ -2,31 +2,24 @@
 {% block main_content %}
     <div class="row pb-3">
         <div class="col">
-            {% if user.avatar == None %}
-                <img style="max-height: 80%" class="img-fluid rectangle-avatar img-thumbnail" src="/static/media/default.png" height="10%">
-            {% else %}
-                <img style="max-height: 80%" class="img-fluid rectangle-avatar img-thumbnail" src="/static/media/from_users/avatars/{{ user.avatar }}" height="10%">
-            {% endif %}
-        </div>
-        <div class="col">
-            {% if user.is_teacher %}
-                <h1 class="text-end">{{ user.surname }} {{ user.name }} {{ user.patronymic }}</h1>
-                <h2 class="text-end" style="color: #ff0000">Учитель</h2>
-            {% else %}
-                <h1 class="text-end">{{ user.surname }} {{ user.name }}</h1>
-            {% endif %}
-            <h4 class="text-end">Логин: @{{ user.login }}</h4>
-        </div>
-    </div>
-    <div class="row">
-        <div class="col">
-            {% if current_user.is_authenticated %}
-            {% if current_user.login == user.login %}
-            <a href="/settings" class="btn btn-info">Настройки аккаунта</a>
-            {% else %}
-            <button type="submit" class="btn btn-info">Отправить заявку в друзья</button>
-            {% endif %}
-            {% endif %}
+            <div class="card" style="width: 18rem;">
+                {% if user.avatar == None %}
+                    <img src="/static/media/default.png" class="card-img-top rectangle-avatar img-thumbnail" alt="{{ user.surname }} {{ user.name }}">
+                {% else %}
+                    <img src="/static/media/from_users/avatars/{{ user.avatar }}" class="card-img-top rectangle-avatar img-thumbnail" alt="{{ user.surname }} {{ user.name }}">
+                {% endif %}
+                
+                <div class="card-body">
+                {% if user.is_teacher %}
+                  <h5 class="card-title text-center">{{ user.surname }} {{ user.name }} {{ user.patronymic }}</h5>
+                  <p class="card-text text-center">Учитель</p>
+                {% else %}
+                  <h5 class="card-title text-center">{{ user.surname }} {{ user.name }}</h5>
+                  <p class="card-text text-center">Ученик</p>
+                 {% endif %}
+                </div>
+            </div>
+            
         </div>
         <div class="col">
             {% if current_user.is_authenticated and current_user.login == user.login %}
@@ -44,5 +37,14 @@
                 <p>{{ user.about }}</p>
             {% endif %}
         </div>
+    </div>
+    <div class="row">
+            {% if current_user.is_authenticated %}
+            {% if current_user.login == user.login %}
+            <a href="/settings" class="btn btn-info">Настройки аккаунта</a>
+            {% else %}
+            <button type="submit" class="btn btn-info">Отправить заявку в друзья</button>
+            {% endif %}
+            {% endif %}
     </div>
 {% endblock %}
