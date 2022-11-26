@@ -3,8 +3,8 @@ from .db_session import SqlAlchemyBase
 from sqlalchemy import orm
 
 from flask_login import UserMixin
+
 from datetime import datetime
-from uuid import uuid4
 
 
 class User(SqlAlchemyBase, UserMixin):
@@ -20,12 +20,13 @@ class User(SqlAlchemyBase, UserMixin):
     about = db.Column(db.String, nullable=True, default="")
     is_admin = db.Column(db.Boolean, default=False)
     is_teacher = db.Column(db.Boolean, default=False)
-    # group_id = db.Column(db.Integer, db.ForeignKey("group.id"), nullable=True, index=True)
+    # group_id = db.Column(db.Integer, db.ForeignKey("group.id"), nullable=True, index=True, default=None)
     creation_date = db.Column(db.DateTime, default=datetime.now)
     last_auth = db.Column(db.DateTime, default=None, nullable=True)
     avatar = db.Column(db.String(128), default=None)
     is_from_proton = db.Column(db.Boolean, default=False)
 
+    posts = orm.relation("Post", back_populates="user")
     # group = orm.relation("Group", back_populates='users')
     # balance = orm.relation("Balance", back_populates='user', uselist=False)
     # orders = orm.relation("Order", back_populates='user')

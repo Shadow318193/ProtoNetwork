@@ -4,28 +4,31 @@
         <div class="container">
         <div class="d-flex flex-wrap align-items-center justify-content-center justify-content-lg-start">
         <a href="/" class="d-flex align-items-center mb-2 mb-lg-0 text-white text-decoration-none">
-          <image src="/static/media/favicon.png" class="bi me-2"></image>
+          <img src="/static/media/favicon.png" width="32" height="32" class="bi me-2">
         </a>
 
         <ul class="nav col-12 col-lg-auto me-lg-auto mb-2 justify-content-center mb-md-0">
-          <li><a href="/home" class="nav-link px-2 text-white">Домашняя</a></li>
-          <li><a href="/news" class="nav-link px-2 text-white">Новости</a></li>
-          <li><a href="/about" class="nav-link px-2 text-white">О нас</a></li>
+            {% if current_user.is_authenticated %}
+                <li><a href="/user/{{ current_user.login }}" class="nav-link px-2 text-white">Домашняя</a></li>
+            {% endif %}
+            <li><a href="/news" class="nav-link px-2 text-white">Новости</a></li>
+            <li><a href="/public" class="nav-link px-2 text-white">Сообщества</a></li>
+            {% if current_user.is_authenticated %}
+            <li><a href="/messages" class="nav-link px-2 text-white">Сообщения</a></li>
+            {% endif %}
         </ul>
 
-        <form class="col-12 col-lg-auto mb-3 mb-lg-0 me-lg-3" role="search">
-          <input type="search" class="form-control form-control-dark text-bg-dark" placeholder="Искать..." aria-label="Search">
-        </form>
-            {% if current_user.is_authenticated %}
-                <div class="text-end">
-                  <a href="/logout" class="btn btn-outline-light me-2">Выйти</a>
-                </div>
-            {% else %}
-                <div class="text-end">
-                  <a href="/login" class="btn btn-outline-light me-2">Войти</a>
-                  <a href="/signup" class="btn btn-info">Зарегистрироваться</a>
-                </div>
-            {% endif %}
+            <div class="text-end">
+                <a href="/search" class="btn btn-outline-light me-2">Искать</a>
+                {% if current_user.is_authenticated %}
+                    <a href="/logout" class="btn btn-outline-light me-2">Выйти</a>
+                {% else %}
+                    <a href="/login" class="btn btn-outline-light me-2">Войти</a>
+                    <a href="/signup" class="btn btn-info">Зарегистрироваться</a>
+                {% endif %}
+            </div>
+
+
       </div>
     </div>
     </header>

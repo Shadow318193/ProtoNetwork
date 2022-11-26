@@ -5,8 +5,11 @@ from werkzeug.security import generate_password_hash, check_password_hash
 
 from data import db_session
 from data.user import User
+from data.post import Post
 
 import datetime
+
+is_xp = False  # Для корректной работы на моём нетбуке с Windows XP :)
 
 app = Flask(__name__)
 login_manager = LoginManager()
@@ -63,18 +66,40 @@ def index():
 @app.route("/user/<username>", methods=["POST", "GET"])
 def user_page(username):
     db_sess = db_session.create_session()
+    if current_user.is_authenticated:
+        current_user.last_auth = datetime.datetime.now()
     user = db_sess.query(User).filter(User.login == username).first()
     if user:
+        posts = db_sess.query(Post).filter(user.id == Post.poster_id)
         if request.method == "GET":
-            return render_template("user.html", user=user, current_user=current_user)
+            return render_template("user.html", user=user, current_user=current_user, posts=posts)
         elif request.method == "POST":
-            if current_user == user and "about_button" in request.form:
-                user.about = request.form["about_input"]
-                db_sess.commit()
-                flash("Описание успешно обновлено", "success")
+            if current_user == user:
+                if "about_button" in request.form:
+                    user.about = request.form["about_input"]
+                    db_sess.commit()
+                    flash("Описание успешно обновлено", "success")
+                elif "post_button" in request.form:
+                    post = Post()
+                    post.poster_id = current_user.id
+                    post.text = request.form["text"]
+                    db_sess.add(post)
+                    db_sess.commit()
+                    flash("Пост успешно отправлен", "success")
                 return redirect("/user/" + username)
     else:
         abort(404)
+
+
+@app.route("/settings")
+@login_required
+def settings():
+    db_sess = db_session.create_session()
+    current_user.last_auth = datetime.datetime.now()
+    if request.method == "GET":
+        return render_template("settings.html", current_user=current_user)
+    elif request.method == "POST":
+        return redirect("/settings")
 
 
 @app.route("/signup", methods=["POST", "GET"])
@@ -132,7 +157,8 @@ def login():
         return render_template("login.html")
     elif request.method == "POST":
         db_sess = db_session.create_session()
-        user = db_sess.query(User).filter(User.login == request.form["login"]).first()
+        user = db_sess.query(User).filter((User.login == request.form["login"])
+                                          | (User.email == request.form["login"])).first()
         if user and check_password_hash(user.hashed_password, request.form["password"]):
             login_user(user)
             user.last_auth = datetime.datetime.now()
@@ -150,13 +176,15 @@ def login():
 @login_required
 def logout():
     logout_user()
-    if request.args.get("from"):
+    if request.args.get("from") != None:
         return redirect(request.args.get("from"))
     return redirect("/")
 
 
 @app.errorhandler(401)
 def e401(code):
+    if current_user.is_authenticated:
+        current_user.last_auth = datetime.datetime.now()
     print(code)
     flash("[Ошибка 401] " + login_manager.login_message, "warning")
     return redirect("/login")
@@ -164,6 +192,8 @@ def e401(code):
 
 @app.errorhandler(403)
 def e401(code):
+    if current_user.is_authenticated:
+        current_user.last_auth = datetime.datetime.now()
     print(code)
     flash("[Ошибка 403] Данную страницу можно смотреть только администраторам", "warning")
     return redirect("/login")
@@ -171,4 +201,7 @@ def e401(code):
 
 if __name__ == "__main__":
     db_session.global_init("db/social_network.db")
-    app.run(host="127.0.0.1", port=8080)
+    if is_xp:
+        app.run(host="127.0.0.1", port=8080)
+    else:
+        app.run(host="0.0.0.0", port=8080)
