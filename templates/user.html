@@ -1,14 +1,13 @@
 {% extends 'base.html' %}
 {% block main_content %}
     <div class="row pb-3">
-        <div class="col">
+        <div class="col pb-3">
             <div class="card" style="width: 18rem;">
                 {% if user.avatar == None %}
-                    <img src="/static/media/default.png" class="card-img-top rectangle-avatar img-thumbnail" alt="{{ user.surname }} {{ user.name }}">
+                    <img src="/static/media/default.png" width="256" height="256" style="margin: 0 auto;" class="img-thumbnail mt-3" alt="{{ user.surname }} {{ user.name }}">
                 {% else %}
-                    <img src="/static/media/from_users/avatars/{{ user.avatar }}" class="card-img-top rectangle-avatar img-thumbnail" alt="{{ user.surname }} {{ user.name }}">
+                    <img src="/static/media/from_users/avatars/{{ user.avatar }}" style="object-fit: cover; width: 256px; height: 256px; margin: 0 auto;" class="img-thumbnail mt-3" alt="{{ user.surname }} {{ user.name }}">
                 {% endif %}
-                
                 <div class="card-body">
                     {% if user.is_from_proton %}
                         {% if user.is_teacher %}
@@ -24,9 +23,17 @@
                     {% endif %}
                 </div>
             </div>
-            
+            {% if current_user.is_authenticated %}
+            <div class="pb-3"></div>
+            {% if current_user.login == user.login %}
+            <a href="/settings" class="btn btn-info" style="width: 18rem;">Настройки аккаунта</a>
+            {% else %}
+            <button type="submit" class="btn btn-info" style="width: 18rem;">Добавить в друзья</button>
+            {% endif %}
+            {% endif %}
         </div>
         <div class="col">
+            <p>В последний раз был в сети: {{ user.last_auth }}</p>
             {% if current_user.is_authenticated and current_user.login == user.login %}
                 <h3>Обо мне:</h3>
                 <form method="post">
@@ -43,20 +50,9 @@
             {% endif %}
         </div>
     </div>
-    <div class="row pb-5">
-        <div class="col">
-            {% if current_user.is_authenticated %}
-            {% if current_user.login == user.login %}
-            <a href="/settings" class="btn btn-info">Настройки аккаунта</a>
-            {% else %}
-            <button type="submit" class="btn btn-info">Добавить в друзья</button>
-            {% endif %}
-            {% endif %}
-        </div>
-        <div class="col"></div>
-    </div>
+    <div class="pb-3"></div>
     {% if current_user.is_authenticated and current_user.login == user.login %}
-    <div style="background-color: #cceeff" class="card p-3">
+    <div style="background-color: #cceeff;" class="card p-3">
         <h1 class="text-center pb-3">Написать новый пост</h1>
         <form method="post">
             <div class="form-group mb-5">
@@ -69,15 +65,26 @@
         </form>
     </div>
     <div class="pb-5"></div>
-    {% elif posts %}
+    {% elif posts_c %}
         <h1>Посты пользователя:</h1>
     {% else %}
         <h1>У пользователя нет постов.</h1>
     {% endif %}
     {% for post in posts[::-1] %}
         <div class="card p-3">
-            <p class="text-end">Дата публикации: {{ post.creation_date }}</p>
-            <p style="white-space: pre-wrap">{{ post.text }}</p>
+            <div class="row pb-3">
+                <div class="col pb-3">
+                    {% if user.avatar == None %}
+                        <img src="/static/media/default.png" width="128" height="128" class="img-thumbnail mt-3" alt="{{ user.surname }} {{ user.name }}">
+                    {% else %}
+                        <img src="/static/media/from_users/avatars/{{ user.avatar }}" style="object-fit: cover; width: 128px; height: 128px;" class="img-thumbnail mt-3" alt="{{ user.surname }} {{ user.name }}">
+                    {% endif %}
+                </div>
+                <div class="col pb-3">
+                    <p class="text-end">Дата публикации: {{ post.creation_date }}</p>
+                </div>
+            </div>
+            <p style="white-space: pre-wrap; font-size: 1.5rem;">{{ post.text }}</p>
         </div>
         <div class="pb-5"></div>
     {% endfor %}

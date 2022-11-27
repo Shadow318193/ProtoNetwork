@@ -21,6 +21,7 @@
             <div class="text-end">
                 <a href="/search" class="btn btn-outline-light me-2">Искать</a>
                 {% if current_user.is_authenticated %}
+                    <a href="/settings" class="btn btn-outline-light me-2">Настройки</a>
                     <a href="/logout" class="btn btn-outline-light me-2">Выйти</a>
                 {% else %}
                     <a href="/login" class="btn btn-outline-light me-2">Войти</a>

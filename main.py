@@ -9,6 +9,8 @@ from data.post import Post
 
 import datetime
 
+import os
+
 is_xp = False  # Для корректной работы на моём нетбуке с Windows XP :)
 
 app = Flask(__name__)
@@ -51,6 +53,19 @@ def password_is_correct(password: str):
     return True
 
 
+def update_user_auth_time():
+    if current_user.is_authenticated:
+        db_sess = db_session.create_session()
+        user = db_sess.query(User).filter(current_user.id == User.id).first()
+        user.last_auth = datetime.datetime.now()
+        db_sess.commit()
+
+
+def allowed_avatar(filename):
+    return '.' in filename and \
+           filename.rsplit('.', 1)[1].lower() in ["png", "jpg", "jpeg", "gif"]
+
+
 app.config['SECRET_KEY'] = 'secret_key'
 app.config['UPLOAD_FOLDER'] = 'static/media/from_users'
 app.config['MAX_CONTENT_LENGTH'] = 64 * 1024 * 1024
@@ -58,6 +73,7 @@ app.config['MAX_CONTENT_LENGTH'] = 64 * 1024 * 1024
 
 @app.route("/", methods=["GET"])
 def index():
+    update_user_auth_time()
     if current_user.is_authenticated:
         return redirect("/user/" + current_user.login)
     return render_template("index.html")
@@ -65,16 +81,16 @@ def index():
 
 @app.route("/user/<username>", methods=["POST", "GET"])
 def user_page(username):
+    update_user_auth_time()
     db_sess = db_session.create_session()
-    if current_user.is_authenticated:
-        current_user.last_auth = datetime.datetime.now()
     user = db_sess.query(User).filter(User.login == username).first()
     if user:
         posts = db_sess.query(Post).filter(user.id == Post.poster_id)
         if request.method == "GET":
-            return render_template("user.html", user=user, current_user=current_user, posts=posts)
+            return render_template("user.html", user=user, current_user=current_user, posts=posts,
+                                   posts_c=posts.count())
         elif request.method == "POST":
-            if current_user == user:
+            if current_user == user and current_user.is_authenticated:
                 if "about_button" in request.form:
                     user.about = request.form["about_input"]
                     db_sess.commit()
@@ -86,25 +102,57 @@ def user_page(username):
                     db_sess.add(post)
                     db_sess.commit()
                     flash("Пост успешно отправлен", "success")
-                return redirect("/user/" + username)
+            else:
+                flash("Нехорошо рыться в HTML для деструктивных действий", "warning")
+            return redirect("/user/" + username)
     else:
         abort(404)
 
 
-@app.route("/settings")
+@app.route("/settings", methods=["POST", "GET"])
 @login_required
 def settings():
-    db_sess = db_session.create_session()
-    current_user.last_auth = datetime.datetime.now()
+    update_user_auth_time()
     if request.method == "GET":
         return render_template("settings.html", current_user=current_user)
     elif request.method == "POST":
-        return redirect("/settings")
+        db_sess = db_session.create_session()
+        user = db_sess.query(User).filter(User.id == current_user.id).first()
+        if "clear_button" in request.form and user.avatar != None:
+            if os.path.isfile("static/media/from_users/avatars/" + user.avatar):
+                os.remove("static/media/from_users/avatars/" + user.avatar)
+            user.avatar = None
+            db_sess.commit()
+        elif "set_button" in request.form:
+            if request.form.get("only_friends"):
+                user.posts_only_for_friends = True
+            else:
+                user.posts_only_for_friends = False
+            if request.form.get("messages_only_friends"):
+                user.talk_only_with_friends = True
+            else:
+                user.talk_only_with_friends = False
+            print(request.files)
+            file = request.files["file"]
+            if file and allowed_avatar(file.filename):
+                if user.avatar != None:
+                    if os.path.isfile("static/media/from_users/avatars/" + user.avatar):
+                        os.remove("static/media/from_users/avatars/" + user.avatar)
+                filename = "avatar" + str(user.id) + "." + file.filename.rsplit('.', 1)[1].lower()
+                print(filename)
+                file.save(os.path.join(app.config['UPLOAD_FOLDER'] + "/avatars", filename))
+                user.avatar = filename
+            db_sess.commit()
+        flash("Настройки обновлены", "success")
+        return redirect("/user/" + current_user.login)
 
 
 @app.route("/signup", methods=["POST", "GET"])
 def signup():
+    update_user_auth_time()
     if request.method == "GET":
+        if current_user.is_authenticated:
+            return redirect("/user/" + current_user.login)
         return render_template("signup.html")
     elif request.method == "POST":
         if not request.form["name"].replace(" ", "") or len(request.form["name"]) > 32:
@@ -151,6 +199,7 @@ def signup():
 
 @app.route("/login", methods=["POST", "GET"])
 def login():
+    update_user_auth_time()
     if request.method == "GET":
         if current_user.is_authenticated:
             return redirect("/user/" + current_user.login)
@@ -175,6 +224,7 @@ def login():
 @app.route("/logout")
 @login_required
 def logout():
+    update_user_auth_time()
     logout_user()
     if request.args.get("from") != None:
         return redirect(request.args.get("from"))
@@ -183,8 +233,7 @@ def logout():
 
 @app.errorhandler(401)
 def e401(code):
-    if current_user.is_authenticated:
-        current_user.last_auth = datetime.datetime.now()
+    update_user_auth_time()
     print(code)
     flash("[Ошибка 401] " + login_manager.login_message, "warning")
     return redirect("/login")
@@ -192,8 +241,7 @@ def e401(code):
 
 @app.errorhandler(403)
 def e401(code):
-    if current_user.is_authenticated:
-        current_user.last_auth = datetime.datetime.now()
+    update_user_auth_time()
     print(code)
     flash("[Ошибка 403] Данную страницу можно смотреть только администраторам", "warning")
     return redirect("/login")

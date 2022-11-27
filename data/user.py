@@ -22,9 +22,11 @@ class User(SqlAlchemyBase, UserMixin):
     is_teacher = db.Column(db.Boolean, default=False)
     # group_id = db.Column(db.Integer, db.ForeignKey("group.id"), nullable=True, index=True, default=None)
     creation_date = db.Column(db.DateTime, default=datetime.now)
-    last_auth = db.Column(db.DateTime, default=None, nullable=True)
+    last_auth = db.Column(db.DateTime, default=datetime.now)
     avatar = db.Column(db.String(128), default=None)
     is_from_proton = db.Column(db.Boolean, default=False)
+    posts_only_for_friends = db.Column(db.Boolean, default=False)
+    talk_only_with_friends = db.Column(db.Boolean, default=False)
 
     posts = orm.relation("Post", back_populates="user")
     # group = orm.relation("Group", back_populates='users')
