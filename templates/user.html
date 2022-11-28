@@ -74,17 +74,20 @@
         <div class="card p-3">
             <div class="row pb-3">
                 <div class="col pb-3">
-                    {% if user.avatar == None %}
-                        <img src="/static/media/default.png" width="128" height="128" class="img-thumbnail mt-3" alt="{{ user.surname }} {{ user.name }}">
-                    {% else %}
-                        <img src="/static/media/from_users/avatars/{{ user.avatar }}" style="object-fit: cover; width: 128px; height: 128px;" class="img-thumbnail mt-3" alt="{{ user.surname }} {{ user.name }}">
-                    {% endif %}
+                    <div>
+                        {% if user.avatar == None %}
+                        <img src="/static/media/default.png" width="64" height="64" class="img-thumbnail mt-3" alt="{{ user.surname }} {{ user.name }}">
+                        {% else %}
+                        <img src="/static/media/from_users/avatars/{{ user.avatar }}" style="object-fit: cover; width: 64px; height: 64px; border-radius: 100px;" class="img-thumbnail mt-3" alt="{{ user.surname }} {{ user.name }}">
+                        {% endif %}
+                        @{{ user.login }}
+                    </div>
                 </div>
                 <div class="col pb-3">
                     <p class="text-end">Дата публикации: {{ post.creation_date }}</p>
                 </div>
             </div>
-            <p style="white-space: pre-wrap; font-size: 1.5rem;">{{ post.text }}</p>
+            <p style="white-space: pre-wrap;" class="ps-5">{{ post.text }}</p>
         </div>
         <div class="pb-5"></div>
     {% endfor %}
