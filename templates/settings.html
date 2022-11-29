@@ -38,7 +38,8 @@
             </div>
         </div>
         <div class="text-center mb-5">
-            <button type="submit" class="btn btn-primary btn-lg" id="set_button" name="set_button">Отправить</button>
+            <a href="/user/{{ current_user.login }}" class="btn btn-primary btn-lg">Отмена</a>
+            <button type="submit" class="btn btn-primary btn-lg" id="set_button" name="set_button">Изменить</button>
         </div>
     </form>
 {% endblock %}
