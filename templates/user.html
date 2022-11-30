@@ -87,12 +87,12 @@
                     <p class="text-end">Дата публикации: {{ post.creation_date }}</p>
                 </div>
             </div>
-            <p style="white-space: pre-wrap;" class="px-5">{{ post.text }}</p>
-            <div class="row">
+            <p style="white-space: pre-wrap;" class="px-5 pb-3">{{ post.text }}</p>
+            <form method="post" class="row">
                 <div class="col">
-                    <button type="submit" class="btn btn-info" id="like" name="like"><img class="me-2" width="32" src="/static/media/like.svg">{{ post.likes }}</button>
+                    <button type="submit" class="btn btn-info" id="like_button" name="like_button" value="{{ post.id }}"><img class="me-2" width="32" src="/static/media/like.svg">{{ post.likes }}</button>
                 </div>
-            </div>
+            </form>
         </div>
         <div class="pb-5"></div>
     {% endfor %}
