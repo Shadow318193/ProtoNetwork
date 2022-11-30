@@ -124,6 +124,10 @@ def settings():
             user.avatar = None
             db_sess.commit()
         elif "set_button" in request.form:
+            if request.form.get("name"):
+                user.name = request.form["name"]
+            if request.form.get("surname"):
+                user.surname = request.form["surname"]
             if request.form.get("login"):
                 existing_user = db_sess.query(User).filter(User.login == request.form["login"]).first()
                 if existing_user:
