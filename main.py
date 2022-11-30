@@ -90,21 +90,29 @@ def user_page(username):
             return render_template("user.html", user=user, current_user=current_user, posts=posts,
                                    posts_c=posts.count())
         elif request.method == "POST":
-            if current_user == user and current_user.is_authenticated:
-                if "about_button" in request.form:
-                    user.about = request.form["about_input"]
-                    db_sess.commit()
-                    flash("Описание успешно обновлено", "success")
-                elif "post_button" in request.form:
-                    post = Post()
-                    post.poster_id = current_user.id
-                    post.text = request.form["text"]
-                    db_sess.add(post)
-                    db_sess.commit()
-                    flash("Пост успешно отправлен", "success")
-            else:
-                flash("Нехорошо рыться в HTML для деструктивных действий", "danger")
-            return redirect("/user/" + username)
+            if current_user.is_authenticated:
+                if "like_button" in request.form:
+                    post = db_sess.query(Post).filter(Post.id == request.form["like_button"]).first()
+                    if post:
+                        post.likes += 1
+                        db_sess.commit()
+                        flash("Пост успешно отправлен", "success")
+                    return redirect("/user/" + username)
+                if current_user == user:
+                    if "about_button" in request.form:
+                        user.about = request.form["about_input"]
+                        db_sess.commit()
+                        flash("Описание успешно обновлено", "success")
+                    elif "post_button" in request.form:
+                        post = Post()
+                        post.poster_id = current_user.id
+                        post.text = request.form["text"]
+                        db_sess.add(post)
+                        db_sess.commit()
+                        flash("Пост успешно отправлен", "success")
+                else:
+                    flash("Нехорошо рыться в HTML для деструктивных действий", "danger")
+                return redirect("/user/" + username)
     else:
         abort(404)
 
