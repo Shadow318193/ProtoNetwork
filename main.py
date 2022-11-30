@@ -250,6 +250,11 @@ def e401(code):
 if __name__ == "__main__":
     db_session.global_init("db/social_network.db")
     if is_xp:
-        app.run(host="127.0.0.1", port=8080)
+        import socket
+        s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        s.connect(("8.8.8.8", 80))
+        host = s.getsockname()[0]
+        s.close()
+        app.run(host=host, port=8080)
     else:
         app.run(host="0.0.0.0", port=8080)
