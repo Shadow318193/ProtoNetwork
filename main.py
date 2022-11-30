@@ -96,7 +96,7 @@ def user_page(username):
                     if post:
                         post.likes += 1
                         db_sess.commit()
-                        flash("Пост успешно отправлен", "success")
+                        flash("Лайк поставлен", "success")
                     return redirect("/user/" + username)
                 if current_user == user:
                     if "about_button" in request.form:
