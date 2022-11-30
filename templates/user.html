@@ -88,6 +88,11 @@
                 </div>
             </div>
             <p style="white-space: pre-wrap;" class="px-5">{{ post.text }}</p>
+            <div class="row">
+                <div class="col">
+                    <button type="submit" class="btn btn-info" id="like" name="like"><img class="me-2" width="32" src="/static/media/like.svg">{{ post.likes }}</button>
+                </div>
+            </div>
         </div>
         <div class="pb-5"></div>
     {% endfor %}
