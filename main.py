@@ -103,7 +103,7 @@ def user_page(username):
                     db_sess.commit()
                     flash("Пост успешно отправлен", "success")
             else:
-                flash("Нехорошо рыться в HTML для деструктивных действий", "warning")
+                flash("Нехорошо рыться в HTML для деструктивных действий", "danger")
             return redirect("/user/" + username)
     else:
         abort(404)
@@ -124,6 +124,16 @@ def settings():
             user.avatar = None
             db_sess.commit()
         elif "set_button" in request.form:
+            if request.form.get("login"):
+                existing_user = db_sess.query(User).filter(User.login == request.form["login"]).first()
+                if existing_user:
+                    flash("Ошибка обновления: кто-то уже есть с таким логином", "danger")
+                    return redirect("/user/" + current_user.login)
+            if request.form.get("email"):
+                existing_user = db_sess.query(User).filter(User.email == request.form["email"]).first()
+                if existing_user:
+                    flash("Ошибка обновления: кто-то уже есть с такой почтой", "danger")
+                    return redirect("/user/" + current_user.login)
             if request.form.get("only_friends"):
                 user.posts_only_for_friends = True
             else:
