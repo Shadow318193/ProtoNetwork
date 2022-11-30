@@ -146,14 +146,12 @@ def settings():
                 user.talk_only_with_friends = True
             else:
                 user.talk_only_with_friends = False
-            print(request.files)
             file = request.files["file"]
             if file and allowed_avatar(file.filename):
                 if user.avatar != None:
                     if os.path.isfile("static/media/from_users/avatars/" + user.avatar):
                         os.remove("static/media/from_users/avatars/" + user.avatar)
                 filename = "avatar" + str(user.id) + "." + file.filename.rsplit('.', 1)[1].lower()
-                print(filename)
                 file.save(os.path.join(app.config['UPLOAD_FOLDER'] + "/avatars", filename))
                 user.avatar = filename
             db_sess.commit()
