@@ -13,6 +13,37 @@ import os
 
 is_xp = False  # Для корректной работы на моём нетбуке с Windows XP :)
 
+AVATAR_TYPES = ["png", "jpg", "jpeg", "gif"]
+POST_MEDIA_PIC_TYPES = ["png", "jpg", "jpeg", "gif"]
+POST_MEDIA_VID_TYPES = ["webm", "mp4"]
+POST_MEDIA_AUD_TYPES = ["mp3", "wav"]
+POST_MEDIA_TYPES = POST_MEDIA_VID_TYPES + POST_MEDIA_PIC_TYPES + POST_MEDIA_AUD_TYPES
+MAX_MEDIA_COUNT = 8
+
+
+def make_accept_for_html(mime: str):
+    # For input tag in HTML
+    if mime in POST_MEDIA_PIC_TYPES:
+        return "image/" + mime
+    elif mime in POST_MEDIA_VID_TYPES:
+        return "video/" + mime
+    elif mime in POST_MEDIA_AUD_TYPES:
+        return "audio/" + mime
+
+
+def make_readble_time(t: datetime.datetime):
+    new_t = str(t).split()
+    new_t[0] = new_t[0].split("-")[::-1]
+    new_t[0] = ".".join(new_t[0])
+    new_t[1] = new_t[1].split(".")[0]
+    new_t = " ".join(new_t)
+    return new_t
+
+
+accept_avatars = ",".join([make_accept_for_html(x) for x in AVATAR_TYPES])
+accept_post_media = ",".join([make_accept_for_html(x) for x in POST_MEDIA_TYPES])
+
+
 app = Flask(__name__)
 login_manager = LoginManager()
 login_manager.init_app(app)
@@ -61,14 +92,14 @@ def update_user_auth_time():
         db_sess.commit()
 
 
-def allowed_avatar(filename):
+def allowed_type(filename, types):
     return '.' in filename and \
-           filename.rsplit('.', 1)[1].lower() in ["png", "jpg", "jpeg", "gif"]
+           filename.rsplit('.', 1)[1].lower() in types
 
 
 app.config['SECRET_KEY'] = 'secret_key'
 app.config['UPLOAD_FOLDER'] = 'static/media/from_users'
-app.config['MAX_CONTENT_LENGTH'] = 64 * 1024 * 1024
+app.config['MAX_CONTENT_LENGTH'] = 128 * 1024 * 1024
 
 
 @app.route("/", methods=["GET"])
@@ -85,18 +116,43 @@ def user_page(username):
     db_sess = db_session.create_session()
     user = db_sess.query(User).filter(User.login == username).first()
     if user:
+        user_time = make_readble_time(user.last_auth)
         posts = db_sess.query(Post).filter(user.id == Post.poster_id)
         if request.method == "GET":
+            post_time = {}
+            post_media = {}
+            post_media_type = {}
+            post_media_count = {}
+            for post in posts:
+                post_time[post.id] = make_readble_time(post.creation_date)
+                if post.media:
+                    post_media[post.id] = post.media.split(", ")
+                    post_media_type[post.id] = post.media_type.split(", ")
+                    post_media_count[post.id] = len(post.media.split(", "))
             return render_template("user.html", user=user, current_user=current_user, posts=posts,
-                                   posts_c=posts.count())
+                                   posts_c=posts.count(), media_pics=POST_MEDIA_PIC_TYPES,
+                                   media_vid=POST_MEDIA_VID_TYPES, media_aud=POST_MEDIA_AUD_TYPES,
+                                   accept_files=accept_post_media, post_time=post_time, user_time=user_time,
+                                   max_size=app.config['MAX_CONTENT_LENGTH'] // 1024 // 1024,
+                                   max_count=MAX_MEDIA_COUNT, post_media=post_media, post_media_type=post_media_type,
+                                   post_media_count=post_media_count)
         elif request.method == "POST":
             if current_user.is_authenticated:
                 if "like_button" in request.form:
                     post = db_sess.query(Post).filter(Post.id == request.form["like_button"]).first()
                     if post:
-                        post.likes += 1
+                        who_liked = post.who_liked.split(", ")
+                        if str(current_user.id) in who_liked:
+                            who_liked.remove(str(current_user.id))
+                            post.likes -= 1
+                            msg = "Лайк убран"
+                        else:
+                            who_liked.append(str(current_user.id))
+                            post.likes += 1
+                            msg = "Лайк поставлен"
+                        post.who_liked = ", ".join(who_liked)
                         db_sess.commit()
-                        flash("Лайк поставлен", "success")
+                        flash(msg, "success")
                     return redirect("/user/" + username)
                 if current_user == user:
                     if "about_button" in request.form:
@@ -105,11 +161,37 @@ def user_page(username):
                         flash("Описание успешно обновлено", "success")
                     elif "post_button" in request.form:
                         post = Post()
+                        new_id = db_sess.query(Post).count() + 1
+                        files = request.files.getlist("files[]")
+                        too_many_files = False
+                        if files:
+                            media = []
+                            media_type = []
+                            f_count = 0
+                            for file in files:
+                                if allowed_type(file.filename, POST_MEDIA_TYPES) and f_count < MAX_MEDIA_COUNT:
+                                    filename = "post" + str(current_user.id) + "_" + str(new_id) + "_" + \
+                                               str(f_count) + "." + file.filename.rsplit('.', 1)[1].lower()
+                                    file.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
+                                    media.append(filename)
+                                    media_type.append(filename.rsplit('.', 1)[1].lower())
+                                    f_count += 1
+                                elif f_count >= MAX_MEDIA_COUNT:
+                                    too_many_files = True
+                                    break
+                            if media:
+                                post.media = ", ".join(media)
+                            if media_type:
+                                post.media_type = ", ".join(media_type)
                         post.poster_id = current_user.id
                         post.text = request.form["text"]
                         db_sess.add(post)
                         db_sess.commit()
-                        flash("Пост успешно отправлен", "success")
+                        if too_many_files:
+                            flash("Пост отправлен, но был превышен лимит файлов на один пост, поэтому"
+                                  " часть из них была отброшена", "warning")
+                        else:
+                            flash("Пост успешно отправлен", "success")
                 else:
                     flash("Нехорошо рыться в HTML для деструктивных действий", "danger")
                 return redirect("/user/" + username)
@@ -122,7 +204,7 @@ def user_page(username):
 def settings():
     update_user_auth_time()
     if request.method == "GET":
-        return render_template("settings.html", current_user=current_user)
+        return render_template("settings.html", current_user=current_user, accept_avatars=accept_avatars)
     elif request.method == "POST":
         db_sess = db_session.create_session()
         user = db_sess.query(User).filter(User.id == current_user.id).first()
@@ -155,7 +237,7 @@ def settings():
             else:
                 user.talk_only_with_friends = False
             file = request.files["file"]
-            if file and allowed_avatar(file.filename):
+            if file and allowed_type(file.filename, AVATAR_TYPES):
                 if user.avatar != None:
                     if os.path.isfile("static/media/from_users/avatars/" + user.avatar):
                         os.remove("static/media/from_users/avatars/" + user.avatar)
@@ -260,7 +342,7 @@ def e401(code):
 
 
 @app.errorhandler(403)
-def e401(code):
+def e403(code):
     update_user_auth_time()
     print(code)
     flash("[Ошибка 403] Данную страницу можно смотреть только администраторам", "warning")

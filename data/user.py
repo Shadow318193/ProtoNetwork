@@ -27,6 +27,7 @@ class User(SqlAlchemyBase, UserMixin):
     is_from_proton = db.Column(db.Boolean, default=False)
     posts_only_for_friends = db.Column(db.Boolean, default=False)
     talk_only_with_friends = db.Column(db.Boolean, default=False)
+    is_banned = db.Column(db.Boolean, nullable=False, default=False)
 
     posts = orm.relation("Post", back_populates="user")
     # group = orm.relation("Group", back_populates='users')

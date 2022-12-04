@@ -12,6 +12,9 @@ class Post(SqlAlchemyBase):
     poster_id = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=False)
     text = db.Column(db.String, nullable=True, default="")
     likes = db.Column(db.Integer, nullable=False, default=0)
+    who_liked = db.Column(db.String, nullable=False, default="")
+    media = db.Column(db.String, nullable=True)
+    media_type = db.Column(db.String, nullable=True)
     creation_date = db.Column(db.DateTime, default=datetime.now)
 
     user = orm.relation("User")

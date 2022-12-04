@@ -30,7 +30,7 @@
             </label>
         </div>
         <div class="pb-5">
-            <div class="card" style="width: 18rem; margin: 0 auto;">
+            <div class="card" style="width: 22rem; margin: 0 auto;">
                 {% if current_user.avatar == None %}
                 <img src="/static/media/default.png" width="256" height="256" style="margin: 0 auto;" class="img-thumbnail mt-3" alt="{{ current_user.surname }} {{ current_user.name }}">
                 {% else %}
@@ -38,7 +38,7 @@
                 {% endif %}
                 <div class="card-body">
                     <label for="file">Приложи новую фотографию</label>
-                    <input type=file class="form-control-file" id="file" name="file" accept="image/png,image/jpeg,image/gif">
+                    <input type=file class="form-control-file" id="file" name="file" accept="{{ accept_avatars }}">
                     <div class="text-center mt-3">
                         <button type="submit" class="btn btn-primary" id="clear_button" name="clear_button">Убрать аватарку</button>
                     </div>
