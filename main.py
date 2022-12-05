@@ -117,6 +117,7 @@ def user_page(username):
     user = db_sess.query(User).filter(User.login == username).first()
     if user:
         user_time = make_readble_time(user.last_auth)
+        the_user_is_friend = str(current_user.id) in user.friends.split(", ")
         if current_user.is_authenticated and user != current_user:
             if str(user.id) in current_user.friends_req.split(", "):
                 user_req = user.id
@@ -134,19 +135,22 @@ def user_page(username):
             post_media = {}
             post_media_type = {}
             post_media_count = {}
+            post_likers = {}
             for post in posts:
                 post_time[post.id] = make_readble_time(post.creation_date)
                 if post.media:
                     post_media[post.id] = post.media.split(", ")
                     post_media_type[post.id] = post.media_type.split(", ")
                     post_media_count[post.id] = len(post.media.split(", "))
+                    post_likers[post.id] = post.who_liked.split(", ")
             return render_template("user.html", user=user, current_user=current_user, posts=posts,
-                                   posts_c=posts.count(), media_pics=POST_MEDIA_PIC_TYPES,
+                                   posts_c=posts.count(), media_pics=POST_MEDIA_PIC_TYPES, post_likers=post_likers,
                                    media_vid=POST_MEDIA_VID_TYPES, media_aud=POST_MEDIA_AUD_TYPES,
                                    accept_files=accept_post_media, post_time=post_time, user_time=user_time,
                                    max_size=app.config['MAX_CONTENT_LENGTH'] // 1024 // 1024,
                                    max_count=MAX_MEDIA_COUNT, post_media=post_media, post_media_type=post_media_type,
-                                   post_media_count=post_media_count, user_req=user_req, user_friend=user_friend)
+                                   post_media_count=post_media_count, user_req=user_req, user_friend=user_friend,
+                                   the_user_is_friend=the_user_is_friend)
         elif request.method == "POST":
             if current_user.is_authenticated:
                 if "like_button" in request.form:
@@ -307,10 +311,10 @@ def friends():
     db_sess = db_session.create_session()
     requested_users = current_user.friends_req.split(", ")
     friends_users = current_user.friends.split(", ")
-    requested_users.remove("")
-    friends_users.remove("")
-    print(requested_users)
-    print(friends_users)
+    if "" in requested_users:
+        requested_users.remove("")
+    if "" in friends_users:
+        friends_users.remove("")
     requested_users_real = db_sess.query(User).filter(User.id != current_user.id)
     friends_users_real = db_sess.query(User).filter(User.id != current_user.id)
     if request.method == "GET":
@@ -341,10 +345,10 @@ def friends():
                 the_user_friends = the_user.friends.split(", ")
                 requested_users.remove(str(the_user.id))
                 my_user.friends_req = ", ".join(requested_users)
-                the_user_friends.append(str(the_user.id))
-                friends_users.append(str(current_user.id))
-                the_user.friends = ", ".join(friends_users)
-                my_user.friends = ", ".join(the_user_friends)
+                the_user_friends.append(str(current_user.id))
+                friends_users.append(str(the_user.id))
+                the_user.friends = ", ".join(the_user_friends)
+                my_user.friends = ", ".join(friends_users)
                 my_user.friends_num += 1
                 the_user.friends_num += 1
                 db_sess.commit()

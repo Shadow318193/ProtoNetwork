@@ -88,11 +88,14 @@
         </form>
     </div>
     <div class="pb-5"></div>
+    {% elif not the_user_is_friend and user.posts_only_for_friends %}
+        <h1 class="text-center">Пользователь запретил смотреть свои посты другим пользователям, не являющимся его друзьями.</h1>
     {% elif posts_c %}
         <h1>Посты пользователя:</h1>
     {% else %}
         <h1>У пользователя нет постов.</h1>
     {% endif %}
+    {% if (current_user == user) or (the_user_is_friend) or not (user.posts_only_for_friends) %}
     {% for post in posts[::-1] %}
         <div class="card p-3">
             <div class="row pb-3">
@@ -130,11 +133,18 @@
             {% endif %}
             <form method="post" class="row">
                 <div class="col">
-                    <button type="submit" class="btn btn-info" id="like_button" name="like_button" value="{{ post.id }}"><img class="me-2" width="32" src="/static/media/like.svg">{{ post.likes }}</button>
+                    <button type="submit" class="btn btn-info" id="like_button" name="like_button" value="{{ post.id }}"><img class="me-2" width="32" src="
+                    {% if current_user.id|string() in post_likers[post.id] %}
+                    /static/media/like_activated.svg
+                    {% else %}
+                    /static/media/like.svg
+                    {% endif %}"
+                    >{{ post.likes }}</button>
                 </div>
             </form>
         </div>
         <div class="pb-5"></div>
     {% endfor %}
+    {% endif %}
 
 {% endblock %}
