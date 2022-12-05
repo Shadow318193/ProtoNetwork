@@ -14,6 +14,7 @@
             <li><a href="/news" class="nav-link px-2 text-white">Новости</a></li>
             <li><a href="/public" class="nav-link px-2 text-white">Сообщества</a></li>
             {% if current_user.is_authenticated %}
+            <li><a href="/friends" class="nav-link px-2 text-white">Друзья</a></li>
             <li><a href="/messages" class="nav-link px-2 text-white">Сообщения</a></li>
             {% endif %}
         </ul>

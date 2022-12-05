@@ -117,6 +117,17 @@ def user_page(username):
     user = db_sess.query(User).filter(User.login == username).first()
     if user:
         user_time = make_readble_time(user.last_auth)
+        if current_user.is_authenticated and user != current_user:
+            if str(user.id) in current_user.friends_req.split(", "):
+                user_req = user.id
+            elif str(current_user.id) in user.friends_req.split(", "):
+                user_req = current_user.id
+            else:
+                user_req = 0
+            user_friend = str(user.id) in current_user.friends.split(", ")
+        else:
+            user_req = None
+            user_friend = None
         posts = db_sess.query(Post).filter(user.id == Post.poster_id)
         if request.method == "GET":
             post_time = {}
@@ -135,7 +146,7 @@ def user_page(username):
                                    accept_files=accept_post_media, post_time=post_time, user_time=user_time,
                                    max_size=app.config['MAX_CONTENT_LENGTH'] // 1024 // 1024,
                                    max_count=MAX_MEDIA_COUNT, post_media=post_media, post_media_type=post_media_type,
-                                   post_media_count=post_media_count)
+                                   post_media_count=post_media_count, user_req=user_req, user_friend=user_friend)
         elif request.method == "POST":
             if current_user.is_authenticated:
                 if "like_button" in request.form:
@@ -193,8 +204,48 @@ def user_page(username):
                         else:
                             flash("Пост успешно отправлен", "success")
                 else:
-                    flash("Нехорошо рыться в HTML для деструктивных действий", "danger")
+                    if "friend_request_button" in request.form and not user_req and not user_friend:
+                        user_friends_req = user.friends_req.split(", ")
+                        user_friends_req.append(str(current_user.id))
+                        user.friends_req = ", ".join(user_friends_req)
+                        db_sess.commit()
+                        flash("Заявка отправлена", "success")
+                    elif "make_friends_button" in request.form and user_req and not user_friend:
+                        user_friends = user.friends.split(", ")
+                        the_user = db_sess.query(User).filter(User.id == current_user.id).first()
+                        current_user_friends = the_user.friends.split(", ")
+                        current_user_friends_req = the_user.friends_req.split(", ")
+                        current_user_friends_req.remove(str(user.id))
+                        the_user.friends_req = ", ".join(current_user_friends_req)
+                        user_friends.append(str(current_user.id))
+                        current_user_friends.append(str(user.id))
+                        the_user.friends = ", ".join(current_user_friends)
+                        user.friends = ", ".join(user_friends)
+                        user.friends_num += 1
+                        the_user.friends_num += 1
+                        db_sess.commit()
+                        flash("Теперь вы друзья", "success")
+                    elif "no_friends_now_button" in request.form and not user_req and user_friend:
+                        user_friends = user.friends.split(", ")
+                        the_user = db_sess.query(User).filter(User.id == current_user.id).first()
+                        current_user_friends = the_user.friends.split(", ")
+                        user_friends.remove(str(current_user.id))
+                        current_user_friends.remove(str(user.id))
+                        the_user.friends = ", ".join(current_user_friends)
+                        user.friends = ", ".join(user_friends)
+                        user.friends_num -= 1
+                        the_user.friends_num -= 1
+                        db_sess.commit()
+                        flash("Вы больше не друзья", "success")
+                    elif "friend_request_button" in request.form and user_req:
+                        flash("Этот пользователь уже прислал вам заявку", "danger")
+                    elif "no_friends_now_button" in request.form and not user_friend:
+                        flash("Этого пользователя нет в друзьях", "danger")
+                    else:
+                        flash("Нехорошо рыться в HTML для деструктивных действий", "danger")
                 return redirect("/user/" + username)
+            else:
+                abort(401)
     else:
         abort(404)
 
@@ -208,7 +259,7 @@ def settings():
     elif request.method == "POST":
         db_sess = db_session.create_session()
         user = db_sess.query(User).filter(User.id == current_user.id).first()
-        if "clear_button" in request.form and user.avatar != None:
+        if "clear_button" in request.form and user.avatar:
             if os.path.isfile("static/media/from_users/avatars/" + user.avatar):
                 os.remove("static/media/from_users/avatars/" + user.avatar)
             user.avatar = None
@@ -247,6 +298,65 @@ def settings():
             db_sess.commit()
         flash("Настройки обновлены", "success")
         return redirect("/user/" + current_user.login)
+
+
+@app.route("/friends", methods=["POST", "GET"])
+@login_required
+def friends():
+    update_user_auth_time()
+    db_sess = db_session.create_session()
+    requested_users = current_user.friends_req.split(", ")
+    friends_users = current_user.friends.split(", ")
+    requested_users.remove("")
+    friends_users.remove("")
+    print(requested_users)
+    print(friends_users)
+    requested_users_real = db_sess.query(User).filter(User.id != current_user.id)
+    friends_users_real = db_sess.query(User).filter(User.id != current_user.id)
+    if request.method == "GET":
+        return render_template("friends.html", users_req=requested_users_real, users_friends=friends_users_real,
+                               current_user=current_user, users_req_c=len(requested_users),
+                               users_friends_c=len(friends_users), users_req_l=requested_users,
+                               users_friends_l=friends_users)
+    elif request.method == "POST":
+        if "make_friends_button" in request.form or "not_friends_button" in request.form:
+            if "make_friends_button" in request.form:
+                if request.form["make_friends_button"] == current_user.id:
+                    flash("Нехорошо рыться в HTML для деструктивных действий", "danger")
+                    return redirect("/friends")
+                the_user = db_sess.query(User).filter(User.id == request.form["make_friends_button"]).first()
+                if not the_user or str(the_user.id) not in requested_users:
+                    flash("Нехорошо рыться в HTML для деструктивных действий", "danger")
+                    return redirect("/friends")
+            elif "not_friends_button" in request.form:
+                if request.form["not_friends_button"] == current_user.id:
+                    flash("Нехорошо рыться в HTML для деструктивных действий", "danger")
+                    return redirect("/friends")
+                the_user = db_sess.query(User).filter(User.id == request.form["no_friends_button"]).first()
+                if not the_user or str(the_user.id) not in friends_users:
+                    flash("Нехорошо рыться в HTML для деструктивных действий", "danger")
+                    return redirect("/friends")
+            my_user = db_sess.query(User).filter(User.id == current_user.id).first()
+            if "make_friends_button" in request.form:
+                the_user_friends = the_user.friends.split(", ")
+                requested_users.remove(str(the_user.id))
+                my_user.friends_req = ", ".join(requested_users)
+                the_user_friends.append(str(the_user.id))
+                friends_users.append(str(current_user.id))
+                the_user.friends = ", ".join(friends_users)
+                my_user.friends = ", ".join(the_user_friends)
+                my_user.friends_num += 1
+                the_user.friends_num += 1
+                db_sess.commit()
+                flash("Теперь вы друзья", "success")
+            elif "no_friends_button" in request.form:
+                requested_users.remove(str(the_user.id))
+                my_user.friends_req = ", ".join(requested_users)
+                db_sess.commit()
+                flash("Отказано в дружбе", "success")
+        else:
+            flash("Нехорошо рыться в HTML для деструктивных действий", "danger")
+        return redirect("/friends")
 
 
 @app.route("/signup", methods=["POST", "GET"])

@@ -1,6 +1,15 @@
 {% extends 'base.html' %}
 {% block main_content %}
+    <h1 class="text_center">Настройки аккаунта</h1>
     <form method="post" enctype="multipart/form-data">
+        <div class="form-group mb-5">
+            <label for="name">Поменять имя</label>
+            <input class="form-control" id="name" name="name" placeholder="Новое имя">
+        </div>
+        <div class="form-group mb-5">
+            <label for="surname">Поменять фамилию</label>
+            <input class="form-control" id="surname" name="surname" placeholder="Новая фамилия">
+        </div>
         <div class="form-group mb-5">
             <label for="login">Поменять логин</label>
             <input class="form-control" id="login" name="login" placeholder="Новый логин">
