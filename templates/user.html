@@ -102,9 +102,9 @@
                 <div class="col pb-3">
                     <div>
                         {% if user.avatar == None %}
-                        <img src="/static/media/default.png" width="64" height="64" class="img-thumbnail mt-3" alt="{{ user.surname }} {{ user.name }}">
+                        <img src="/static/media/default.png" width="64" height="64" class="img-thumbnail" alt="{{ user.surname }} {{ user.name }}">
                         {% else %}
-                        <img src="/static/media/from_users/avatars/{{ user.avatar }}" style="object-fit: cover; width: 64px; height: 64px; border-radius: 100px;" class="img-thumbnail mt-3" alt="{{ user.surname }} {{ user.name }}">
+                        <img src="/static/media/from_users/avatars/{{ user.avatar }}" style="object-fit: cover; width: 64px; height: 64px; border-radius: 100px;" class="img-thumbnail" alt="{{ user.surname }} {{ user.name }}">
                         {% endif %}
                         {% if user.is_teacher %}
                             <b>{{ user.surname }} {{ user.name }} {{ user.patronymic }}</b> (@{{ user.login }})
@@ -114,17 +114,17 @@
                     </div>
                 </div>
                 <div class="col pb-3">
-                    <p class="text-end">Дата публикации: <i>{{ post_time[post.id] }}</i></p>
+                    <p class="text-end mt-3">Дата публикации: <i>{{ post_time[post.id] }}</i></p>
                 </div>
             </div>
-            <p style="white-space: pre-wrap;" class="px-5 pb-3">{{ post.text }}</p>
+            <p style="white-space: pre-wrap; padding: 0 3%;" class="pb-3">{{ post.text }}</p>
             {% if post_media[post.id] %}
             <div style="display: flex; flex-flow: row wrap;" class="pb-3">
                 {% for m in range(post_media_count[post.id]) %}
                     {% if post_media_type[post.id][m] in media_pics %}
-                        <img class="img-thumbnail" style="max-height: 192px;" src="/static/media/from_users/{{ post_media[post.id][m] }}">
+                        <img class="img-thumbnail" style="max-height: 192px; min-height: 128px;" src="/static/media/from_users/{{ post_media[post.id][m] }}">
                     {% elif post_media_type[post.id][m] in media_vid %}
-                        <video controls preload="metadata" class="img-thumbnail" style="max-height: 192px;" src="/static/media/from_users/{{ post_media[post.id][m] }}"></video>
+                        <video controls preload="metadata" class="img-thumbnail" style="max-height: 192px; min-height: 128px;" src="/static/media/from_users/{{ post_media[post.id][m] }}"></video>
                     {% elif post_media_type[post.id][m] in media_aud %}
                         <audio controls class="p-1" src="/static/media/from_users/{{ post_media[post.id][m] }}"></audio>
                     {% endif %}
@@ -133,8 +133,8 @@
             {% endif %}
             <form method="post" class="row">
                 <div class="col">
-                    <button type="submit" class="btn btn-info" id="like_button" name="like_button" value="{{ post.id }}"><img class="me-2" width="32" src="
-                    {% if current_user.id|string() in post_likers[post.id] %}
+                    <button type="submit" class="btn btn-outline-secondary" id="like_button" name="like_button" value="{{ post.id }}"><img class="me-2" width="32" src="
+                    {% if current_user.id|string() in post_likers[post.id] and current_user.is_authenticated %}
                     /static/media/like_activated.svg
                     {% else %}
                     /static/media/like.svg

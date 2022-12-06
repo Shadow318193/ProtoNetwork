@@ -20,6 +20,9 @@ POST_MEDIA_AUD_TYPES = ["mp3", "wav"]
 POST_MEDIA_TYPES = POST_MEDIA_VID_TYPES + POST_MEDIA_PIC_TYPES + POST_MEDIA_AUD_TYPES
 MAX_MEDIA_COUNT = 8
 
+PICS_404 = ["masha.png"]
+PICS_500 = ["masyanya.png", "vovka.png", "baby.jpg", "fedor.png"]
+
 
 def make_accept_for_html(mime: str):
     # For input tag in HTML
@@ -47,7 +50,8 @@ accept_post_media = ",".join([make_accept_for_html(x) for x in POST_MEDIA_TYPES]
 app = Flask(__name__)
 login_manager = LoginManager()
 login_manager.init_app(app)
-login_manager.login_message = "Данную страницу можно смотреть только авторизованным пользователям"
+login_manager.login_message = "Cмотреть данную страницу/делать данное действие можно " \
+                              "только авторизованным пользователям"
 
 
 @login_manager.user_loader
@@ -117,8 +121,8 @@ def user_page(username):
     user = db_sess.query(User).filter(User.login == username).first()
     if user:
         user_time = make_readble_time(user.last_auth)
-        the_user_is_friend = str(current_user.id) in user.friends.split(", ")
         if current_user.is_authenticated and user != current_user:
+            the_user_is_friend = str(current_user.id) in user.friends.split(", ")
             if str(user.id) in current_user.friends_req.split(", "):
                 user_req = user.id
             elif str(current_user.id) in user.friends_req.split(", "):
@@ -129,6 +133,7 @@ def user_page(username):
         else:
             user_req = None
             user_friend = None
+            the_user_is_friend = None
         posts = db_sess.query(Post).filter(user.id == Post.poster_id)
         if request.method == "GET":
             post_time = {}
@@ -428,6 +433,8 @@ def login():
             login_user(user)
             user.last_auth = datetime.datetime.now()
             flash("Успешный вход", "success")
+            if request.args.get("from"):
+                return redirect(request.args.get("from"))
             return redirect("/user/" + user.login)
         elif not user:
             flash("Ошибка входа: неверный логин", "danger")
@@ -442,7 +449,7 @@ def login():
 def logout():
     update_user_auth_time()
     logout_user()
-    if request.args.get("from") != None:
+    if request.args.get("from"):
         return redirect(request.args.get("from"))
     return redirect("/")
 
@@ -459,8 +466,27 @@ def e401(code):
 def e403(code):
     update_user_auth_time()
     print(code)
-    flash("[Ошибка 403] Данную страницу можно смотреть только администраторам", "warning")
+    flash("[Ошибка 403] Cмотреть данную страницу/делать данное действие можно только администраторам", "warning")
     return redirect("/login")
+
+
+@app.errorhandler(404)
+def e404(code):
+    update_user_auth_time()
+    print(code)
+    return render_template("error.html", current_user=current_user, link=request.args.get("from"),
+                           code=404, err="Мы не можем показать тебе эту страницу: её не существует",
+                           pics=PICS_404)
+
+
+@app.errorhandler(500)
+def e500(code):
+    update_user_auth_time()
+    print(code)
+    return render_template("error.html", current_user=current_user, link=request.args.get("from"),
+                           code=500, err="Извини за неудобство, но сайт по какой-то причине подписал отказ в"
+                                          "показе страницы. Сейчас мы активно работаем над причиной проблемы и"
+                                          " исправляем её", pics=PICS_500)
 
 
 if __name__ == "__main__":
