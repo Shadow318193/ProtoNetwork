@@ -11,6 +11,8 @@ import datetime
 
 import os
 
+from time import time
+
 from platform import release
 
 is_xp = True if release() == "XP" else False  # Для корректной работы на моём нетбуке с Windows XP :)
@@ -177,11 +179,11 @@ def user_page(username):
                         flash(msg, "success")
                     return redirect("/user/" + username)
                 if current_user == user:
-                    if "about_button" in request.form:
+                    if "about_button" in request.form and not current_user.is_banned:
                         user.about = request.form["about_input"]
                         db_sess.commit()
                         flash("Описание успешно обновлено", "success")
-                    elif "post_button" in request.form:
+                    elif "post_button" in request.form and not current_user.is_banned:
                         post = Post()
                         new_id = db_sess.query(Post).count() + 1
                         files = request.files.getlist("files[]")
@@ -214,8 +216,24 @@ def user_page(username):
                                   " часть из них была отброшена", "warning")
                         else:
                             flash("Пост успешно отправлен", "success")
+                    elif current_user.is_banned:
+                        flash("Вы были забанены, поэтому вы не можете что-либо отправлять. "
+                              "Причина бана: " + current_user.ban_reason, "danger")
                 else:
-                    if "friend_request_button" in request.form and not user_req and not user_friend:
+                    if "ban_user_button" in request.form and current_user.is_admin and not user.is_banned:
+                        if request.form.get("reason_text"):
+                            user.ban_reason = request.form["reason_text"]
+                            user.is_banned = True
+                            db_sess.commit()
+                            flash("Пользователь успешно забанен", "success")
+                        else:
+                            flash("Вам необходимо указать причину бана", "danger")
+                    elif "unban_user_button" in request.form and current_user.is_admin and user.is_banned:
+                        user.ban_reason = None
+                        user.is_banned = False
+                        db_sess.commit()
+                        flash("Пользователь успешно разбанен", "success")
+                    elif "friend_request_button" in request.form and not user_req and not user_friend:
                         user_friends_req = user.friends_req.split(", ")
                         user_friends_req.append(str(current_user.id))
                         user.friends_req = ", ".join(user_friends_req)
@@ -444,6 +462,29 @@ def login():
         elif not check_password_hash(user.hashed_password, request.form["password"]):
             flash("Ошибка входа: неверный пароль", "danger")
             return redirect("/login")
+
+
+@app.route("/search", methods=["POST", "GET"])
+def search():
+    update_user_auth_time()
+    if request.method == "GET":
+        db_sess = db_session.create_session()
+        text_to_search = request.args.get("req")
+        users = db_sess.query(User)
+        needed_users = []
+        if text_to_search:
+            text_to_search = text_to_search.lower()
+            for user in users:
+                if text_to_search in user.name.lower() or text_to_search in user.surname.lower() \
+                        or text_to_search in user.login.lower():
+                    needed_users.append(user)
+            users_c = len(needed_users)
+        else:
+            users_c = users.count()
+        return render_template("search.html", current_user=current_user, text_to_search=text_to_search,
+                               users=needed_users if text_to_search else users, users_c=users_c)
+    elif request.method == "POST":
+        return redirect("/search?req=" + request.form.get("text_to_search"))
 
 
 @app.route("/logout")

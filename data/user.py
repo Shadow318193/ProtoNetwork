@@ -28,6 +28,7 @@ class User(SqlAlchemyBase, UserMixin):
     posts_only_for_friends = db.Column(db.Boolean, default=False)
     talk_only_with_friends = db.Column(db.Boolean, default=False)
     is_banned = db.Column(db.Boolean, nullable=False, default=False)
+    ban_reason = db.Column(db.String, nullable=True, default=None)
     friends = db.Column(db.String, nullable=False, default="")
     friends_num = db.Column(db.Integer, nullable=False, default=0)
     friends_req = db.Column(db.String, nullable=False, default="")
