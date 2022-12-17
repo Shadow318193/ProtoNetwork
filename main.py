@@ -11,7 +11,9 @@ import datetime
 
 import os
 
-is_xp = False  # Для корректной работы на моём нетбуке с Windows XP :)
+from platform import release
+
+is_xp = True if release() == "XP" else False  # Для корректной работы на моём нетбуке с Windows XP :)
 
 AVATAR_TYPES = ["png", "jpg", "jpeg", "gif"]
 POST_MEDIA_PIC_TYPES = ["png", "jpg", "jpeg", "gif"]
@@ -484,7 +486,7 @@ def e500(code):
     update_user_auth_time()
     print(code)
     return render_template("error.html", current_user=current_user, link=request.args.get("from"),
-                           code=500, err="Извини за неудобство, но сайт по какой-то причине подписал отказ в"
+                           code=500, err="Извини за неудобство, но сайт по какой-то причине подписал отказ в "
                                           "показе страницы. Сейчас мы активно работаем над причиной проблемы и"
                                           " исправляем её", pics=PICS_500)
 

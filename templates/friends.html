@@ -4,10 +4,10 @@
     {% if users_req_c %}
         <h3 class="pb-3">Входящие заявки в друзья:</h3>
         <div class="row pb-3">
+            <div class="card p-3" style="overflow: auto; display: flex; flex-direction: row;">
         {% for user in users_req %}
             {% if user.id|string() in users_req_l %}
-                <div class="col pb-3">
-                    <div class="card" style="width: 18rem; margin: 0 auto;">
+                    <div class="card" style="min-width: 18rem; width: 18rem; margin: 0 5px;">
                         {% if user.avatar == None %}
                             <img src="/static/media/default.png" width="256" height="256" style="margin: 0 auto;" class="img-thumbnail mt-3" alt="{{ user.surname }} {{ user.name }}">
                         {% else %}
@@ -37,9 +37,9 @@
                             </form>
                         </div>
                     </div>
-                </div>
             {% endif %}
         {% endfor %}
+            </div>
         </div>
     {% else %}
         <h3 class="pb-3 text-center">Входящих заявок нет</h3>
@@ -47,10 +47,10 @@
     {% if users_friends_c %}
         <h3 class="pb-3">Друзья:</h3>
         <div class="row pb-3">
+            <div class="card p-3" style="overflow: auto; display: flex; flex-direction: row;">
         {% for user in users_friends %}
             {% if user.id|string() in users_friends_l %}
-                <div class="col pb-3">
-                    <div class="card" style="width: 18rem; margin: 0 auto;">
+                    <div class="card" style="min-width: 18rem; width: 18rem; margin: 0 5px;">
                         {% if user.avatar == None %}
                             <img src="/static/media/default.png" width="256" height="256" style="margin: 0 auto;" class="img-thumbnail mt-3" alt="{{ user.surname }} {{ user.name }}">
                         {% else %}
@@ -77,9 +77,9 @@
                             </div>
                         </div>
                     </div>
-                </div>
             {% endif %}
         {% endfor %}
+            </div>
         </div>
     {% else %}
         <h3 class="pb-3 text-center">Друзей нет</h3>
