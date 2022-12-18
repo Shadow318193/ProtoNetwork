@@ -8,8 +8,10 @@
         {% for user in users_req %}
             {% if user.id|string() in users_req_l %}
                     <div class="card" style="min-width: 18rem; width: 18rem; margin: 0 5px;">
-                        {% if user.avatar == None %}
+                        {% if user.avatar == None and not user.is_banned %}
                             <img src="/static/media/default.png" width="256" height="256" style="margin: 0 auto;" class="img-thumbnail mt-3" alt="{{ user.surname }} {{ user.name }}">
+                        {% elif user.is_banned %}
+                            <img src="/static/media/ban.jpg" width="256" height="256" style="margin: 0 auto;" class="img-thumbnail mt-3" alt="{{ user.surname }} {{ user.name }}">
                         {% else %}
                             <img src="/static/media/from_users/avatars/{{ user.avatar }}" style="object-fit: cover; width: 256px; height: 256px; margin: 0 auto;" class="img-thumbnail mt-3" alt="{{ user.surname }} {{ user.name }}">
                         {% endif %}
@@ -51,8 +53,10 @@
         {% for user in users_friends %}
             {% if user.id|string() in users_friends_l %}
                     <div class="card" style="min-width: 18rem; width: 18rem; margin: 0 5px;">
-                        {% if user.avatar == None %}
+                        {% if user.avatar == None and not user.is_banned %}
                             <img src="/static/media/default.png" width="256" height="256" style="margin: 0 auto;" class="img-thumbnail mt-3" alt="{{ user.surname }} {{ user.name }}">
+                        {% elif user.is_banned %}
+                            <img src="/static/media/ban.jpg" width="256" height="256" style="margin: 0 auto;" class="img-thumbnail mt-3" alt="{{ user.surname }} {{ user.name }}">
                         {% else %}
                             <img src="/static/media/from_users/avatars/{{ user.avatar }}" style="object-fit: cover; width: 256px; height: 256px; margin: 0 auto;" class="img-thumbnail mt-3" alt="{{ user.surname }} {{ user.name }}">
                         {% endif %}

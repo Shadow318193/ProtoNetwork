@@ -10,7 +10,7 @@ main {
 body {
     background-color: #f7e6dc;
     background-image: url(../media/bg.jpg);
-    background-position: top;
+    background-position: center;
     background-repeat: no-repeat;
     background-attachment: fixed;
 }

@@ -24,7 +24,7 @@ POST_MEDIA_AUD_TYPES = ["mp3", "wav"]
 POST_MEDIA_TYPES = POST_MEDIA_VID_TYPES + POST_MEDIA_PIC_TYPES + POST_MEDIA_AUD_TYPES
 MAX_MEDIA_COUNT = 8
 
-PICS_404 = ["masha.png"]
+PICS_404 = ["masha.png", "johnny.gif"]
 PICS_500 = ["masyanya.png", "vovka.png", "baby.jpg", "fedor.png"]
 
 
@@ -185,7 +185,6 @@ def user_page(username):
                         flash("Описание успешно обновлено", "success")
                     elif "post_button" in request.form and not current_user.is_banned:
                         post = Post()
-                        new_id = db_sess.query(Post).count() + 1
                         files = request.files.getlist("files[]")
                         too_many_files = False
                         if files:
@@ -194,8 +193,8 @@ def user_page(username):
                             f_count = 0
                             for file in files:
                                 if allowed_type(file.filename, POST_MEDIA_TYPES) and f_count < MAX_MEDIA_COUNT:
-                                    filename = "post" + str(current_user.id) + "_" + str(new_id) + "_" + \
-                                               str(f_count) + "." + file.filename.rsplit('.', 1)[1].lower()
+                                    filename = str(time()).replace(".", "_") + "_" + str(f_count) + "." + \
+                                               file.filename.rsplit('.', 1)[1].lower()
                                     file.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
                                     media.append(filename)
                                     media_type.append(filename.rsplit('.', 1)[1].lower())
@@ -470,7 +469,7 @@ def search():
     if request.method == "GET":
         db_sess = db_session.create_session()
         text_to_search = request.args.get("req")
-        users = db_sess.query(User)
+        users = db_sess.query(User).filter(User.id != current_user.id)
         needed_users = []
         if text_to_search:
             text_to_search = text_to_search.lower()

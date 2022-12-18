@@ -3,8 +3,10 @@
     <div class="row pb-3">
         <div class="col pb-3">
             <div class="card" style="width: 18rem;">
-                {% if user.avatar == None %}
+                {% if user.avatar == None and not user.is_banned %}
                     <img src="/static/media/default.png" width="256" height="256" style="margin: 0 auto;" class="img-thumbnail mt-3" alt="{{ user.surname }} {{ user.name }}">
+                {% elif user.is_banned %}
+                    <img src="/static/media/ban.jpg" width="256" height="256" style="margin: 0 auto;" class="img-thumbnail mt-3" alt="{{ user.surname }} {{ user.name }}">
                 {% else %}
                     <img src="/static/media/from_users/avatars/{{ user.avatar }}" style="object-fit: cover; width: 256px; height: 256px; margin: 0 auto;" class="img-thumbnail mt-3" alt="{{ user.surname }} {{ user.name }}">
                 {% endif %}
@@ -116,8 +118,10 @@
             <div class="row pb-3">
                 <div class="col pb-3">
                     <div>
-                        {% if user.avatar == None %}
-                        <img src="/static/media/default.png" width="64" height="64" class="img-thumbnail" alt="{{ user.surname }} {{ user.name }}">
+                        {% if user.avatar == None and not user.is_banned %}
+                        <img src="/static/media/default.png" style="object-fit: cover; width: 64px; height: 64px; border-radius: 100px;" class="img-thumbnail" alt="{{ user.surname }} {{ user.name }}">
+                        {% elif user.is_banned %}
+                        <img src="/static/media/ban.jpg" style="object-fit: cover; width: 64px; height: 64px; border-radius: 100px;" class="img-thumbnail" alt="{{ user.surname }} {{ user.name }}">
                         {% else %}
                         <img src="/static/media/from_users/avatars/{{ user.avatar }}" style="object-fit: cover; width: 64px; height: 64px; border-radius: 100px;" class="img-thumbnail" alt="{{ user.surname }} {{ user.name }}">
                         {% endif %}
