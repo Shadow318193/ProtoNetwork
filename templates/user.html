@@ -1,5 +1,14 @@
 {% extends 'base.html' %}
 {% block main_content %}
+    {% if last_n %}
+    <h3 class="text-center">Последняя новость</h3>
+    <div class="card p-3">
+        <p class="text-end">Дата публикации: <i>{{ last_n_time }}</i></p>
+        <h3 class="text-center pb-3">{{ last_n.topic }}</h3>
+        <a href="/news" class="btn btn-info">Подробнее</a>
+    </div>
+    <div class="pb-5"></div>
+    {% endif %}
     <div class="row pb-3">
         <div class="col pb-3">
             <div class="card" style="width: 18rem;">
@@ -67,6 +76,7 @@
         </div>
         <div class="col">
             <p>В последний раз был в сети: <i>{{ user_time }}</i></p>
+            <p>Друзей: {{ user.friends_num }}</p>
             {% if current_user.is_authenticated and current_user.login == user.login %}
                 <h3>Обо мне:</h3>
                 <form method="post">

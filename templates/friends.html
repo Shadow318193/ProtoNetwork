@@ -1,5 +1,14 @@
 {% extends 'base.html' %}
 {% block main_content %}
+    {% if last_n %}
+    <h3 class="text-center">Последняя новость</h3>
+    <div class="card p-3">
+        <p class="text-end">Дата публикации: <i>{{ last_n_time }}</i></p>
+        <h3 class="text-center pb-3">{{ last_n.topic }}</h3>
+        <a href="/news" class="btn btn-info">Подробнее</a>
+    </div>
+    <div class="pb-5"></div>
+    {% endif %}
     <h1 class="text-center pb-3">Друзья</h1>
     {% if users_req_c %}
         <h3 class="pb-3">Входящие заявки в друзья:</h3>
@@ -47,7 +56,7 @@
         <h3 class="pb-3 text-center">Входящих заявок нет</h3>
     {% endif %}
     {% if users_friends_c %}
-        <h3 class="pb-3">Друзья:</h3>
+        <h3 class="pb-3">Твои друзья ({{ current_user.friends_num }}):</h3>
         <div class="row pb-3">
             <div class="card p-3" style="overflow: auto; display: flex; flex-direction: row;">
         {% for user in users_friends %}

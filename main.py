@@ -6,6 +6,7 @@ from werkzeug.security import generate_password_hash, check_password_hash
 from data import db_session
 from data.user import User
 from data.post import Post
+from data.news import News
 
 import datetime
 
@@ -140,6 +141,11 @@ def user_page(username):
             the_user_is_friend = None
         posts = db_sess.query(Post).filter(user.id == Post.poster_id)
         if request.method == "GET":
+            last_n = db_sess.query(News).get(db_sess.query(News).count())
+            if last_n:
+                last_n_time = make_readble_time(last_n.creation_date)
+            else:
+                last_n_time = None
             post_time = {}
             post_media = {}
             post_media_type = {}
@@ -151,7 +157,9 @@ def user_page(username):
                     post_media[post.id] = post.media.split(", ")
                     post_media_type[post.id] = post.media_type.split(", ")
                     post_media_count[post.id] = len(post.media.split(", "))
-                    post_likers[post.id] = post.who_liked.split(", ")
+                post_likers[post.id] = post.who_liked.split(", ")
+                if "" in post_likers[post.id]:
+                    post_likers[post.id].remove("")
             return render_template("user.html", user=user, current_user=current_user, posts=posts,
                                    posts_c=posts.count(), media_pics=POST_MEDIA_PIC_TYPES, post_likers=post_likers,
                                    media_vid=POST_MEDIA_VID_TYPES, media_aud=POST_MEDIA_AUD_TYPES,
@@ -159,13 +167,15 @@ def user_page(username):
                                    max_size=app.config['MAX_CONTENT_LENGTH'] // 1024 // 1024,
                                    max_count=MAX_MEDIA_COUNT, post_media=post_media, post_media_type=post_media_type,
                                    post_media_count=post_media_count, user_req=user_req, user_friend=user_friend,
-                                   the_user_is_friend=the_user_is_friend)
+                                   the_user_is_friend=the_user_is_friend, last_n=last_n, last_n_time=last_n_time)
         elif request.method == "POST":
             if current_user.is_authenticated:
-                if "like_button" in request.form:
+                if "like_button" in request.form and (current_user == user or not user.posts_only_for_friends):
                     post = db_sess.query(Post).filter(Post.id == request.form["like_button"]).first()
                     if post:
                         who_liked = post.who_liked.split(", ")
+                        if "" in who_liked:
+                            who_liked.remove("")
                         if str(current_user.id) in who_liked:
                             who_liked.remove(str(current_user.id))
                             post.likes -= 1
@@ -216,33 +226,43 @@ def user_page(username):
                         else:
                             flash("Пост успешно отправлен", "success")
                     elif current_user.is_banned:
-                        flash("Вы были забанены, поэтому вы не можете что-либо отправлять. "
-                              "Причина бана: " + current_user.ban_reason, "danger")
+                        flash("Ты был забанен, поэтому отправлять с этого аккаунта больше ничего нельзя."
+                              "Только смотреть. Причина бана: " + current_user.ban_reason, "danger")
                 else:
                     if "ban_user_button" in request.form and current_user.is_admin and not user.is_banned:
-                        if request.form.get("reason_text"):
+                        if request.form.get("reason_text") and not user.is_admin:
                             user.ban_reason = request.form["reason_text"]
                             user.is_banned = True
                             db_sess.commit()
                             flash("Пользователь успешно забанен", "success")
+                        elif user.is_admin:
+                            flash("Нельзя блокировать администраторов", "danger")
                         else:
-                            flash("Вам необходимо указать причину бана", "danger")
-                    elif "unban_user_button" in request.form and current_user.is_admin and user.is_banned:
+                            flash("Необходимо указать причину бана", "danger")
+                    elif "unban_user_button" in request.form and current_user.is_admin and user.is_banned and not user.is_admin:
                         user.ban_reason = None
                         user.is_banned = False
                         db_sess.commit()
                         flash("Пользователь успешно разбанен", "success")
                     elif "friend_request_button" in request.form and not user_req and not user_friend:
                         user_friends_req = user.friends_req.split(", ")
+                        if "" in user_friends_req:
+                            user_friends_req.remove("")
                         user_friends_req.append(str(current_user.id))
                         user.friends_req = ", ".join(user_friends_req)
                         db_sess.commit()
                         flash("Заявка отправлена", "success")
                     elif "make_friends_button" in request.form and user_req and not user_friend:
                         user_friends = user.friends.split(", ")
+                        if "" in user_friends:
+                            user_friends.remove("")
                         the_user = db_sess.query(User).filter(User.id == current_user.id).first()
                         current_user_friends = the_user.friends.split(", ")
+                        if "" in current_user_friends:
+                            current_user_friends.remove("")
                         current_user_friends_req = the_user.friends_req.split(", ")
+                        if "" in current_user_friends_req:
+                            current_user_friends_req.remove("")
                         current_user_friends_req.remove(str(user.id))
                         the_user.friends_req = ", ".join(current_user_friends_req)
                         user_friends.append(str(current_user.id))
@@ -342,10 +362,15 @@ def friends():
     requested_users_real = db_sess.query(User).filter(User.id != current_user.id)
     friends_users_real = db_sess.query(User).filter(User.id != current_user.id)
     if request.method == "GET":
+        last_n = db_sess.query(News).get(db_sess.query(News).count())
+        if last_n:
+            last_n_time = make_readble_time(last_n.creation_date)
+        else:
+            last_n_time = None
         return render_template("friends.html", users_req=requested_users_real, users_friends=friends_users_real,
                                current_user=current_user, users_req_c=len(requested_users),
                                users_friends_c=len(friends_users), users_req_l=requested_users,
-                               users_friends_l=friends_users)
+                               users_friends_l=friends_users, last_n=last_n, last_n_time=last_n_time)
     elif request.method == "POST":
         if "make_friends_button" in request.form or "not_friends_button" in request.form:
             if "make_friends_button" in request.form:
@@ -468,22 +493,96 @@ def search():
     update_user_auth_time()
     if request.method == "GET":
         db_sess = db_session.create_session()
+        last_n = db_sess.query(News).get(db_sess.query(News).count())
+        if last_n:
+            last_n_time = make_readble_time(last_n.creation_date)
+        else:
+            last_n_time = None
         text_to_search = request.args.get("req")
-        users = db_sess.query(User).filter(User.id != current_user.id)
+        if current_user.is_authenticated:
+            users = db_sess.query(User).filter(User.id != current_user.id)
+        else:
+            users = db_sess.query(User)
         needed_users = []
         if text_to_search:
-            text_to_search = text_to_search.lower()
+            text_to_search = [x.lower() for x in text_to_search.split("+")]
             for user in users:
-                if text_to_search in user.name.lower() or text_to_search in user.surname.lower() \
-                        or text_to_search in user.login.lower():
-                    needed_users.append(user)
+                for t in text_to_search:
+                    if user.patronymic:
+                        if t in user.name.lower() or t in user.surname.lower() or t in user.login.lower() or \
+                                t in user.patronymic.lower():
+                            needed_users.append(user)
+                    else:
+                        if t in user.name.lower() or t in user.surname.lower() or t in user.login.lower():
+                            needed_users.append(user)
             users_c = len(needed_users)
         else:
             users_c = users.count()
         return render_template("search.html", current_user=current_user, text_to_search=text_to_search,
-                               users=needed_users if text_to_search else users, users_c=users_c)
+                               users=needed_users if text_to_search else users, users_c=users_c,
+                               last_n=last_n, last_n_time=last_n_time)
     elif request.method == "POST":
-        return redirect("/search?req=" + request.form.get("text_to_search"))
+        return redirect("/search?req=" + request.form.get("text_to_search").replace(" ", "+"))
+
+
+@app.route("/news", methods=["POST", "GET"])
+def news_page():
+    update_user_auth_time()
+    db_sess = db_session.create_session()
+    if request.method == "GET":
+        news = db_sess.query(News)
+        n_time = {}
+        n_media = {}
+        n_media_type = {}
+        n_media_count = {}
+        for n in news:
+            n_time[n.id] = make_readble_time(n.creation_date)
+            if n.media:
+                n_media[n.id] = n.media.split(", ")
+                n_media_type[n.id] = n.media_type.split(", ")
+                n_media_count[n.id] = len(n.media.split(", "))
+        return render_template("news.html", current_user=current_user, news=news, n_time=n_time, n_media=n_media,
+                               n_media_type=n_media_type, n_media_count=n_media_count, media_pics=POST_MEDIA_PIC_TYPES,
+                               media_vid=POST_MEDIA_VID_TYPES, media_aud=POST_MEDIA_AUD_TYPES)
+    elif request.method == "POST":
+        if (current_user.is_admin or current_user.is_news_publisher) and not current_user.is_banned and \
+                current_user.is_authenticated:
+            n = News()
+            new_id = db_sess.query(News).count() + 1
+            files = request.files.getlist("files[]")
+            too_many_files = False
+            if files:
+                media = []
+                media_type = []
+                f_count = 0
+                for file in files:
+                    if allowed_type(file.filename, POST_MEDIA_TYPES) and f_count < MAX_MEDIA_COUNT:
+                        filename = "news" + str(new_id) + "_" + str(f_count) + "." + \
+                                   file.filename.rsplit('.', 1)[1].lower()
+                        file.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
+                        media.append(filename)
+                        media_type.append(filename.rsplit('.', 1)[1].lower())
+                        f_count += 1
+                    elif f_count >= MAX_MEDIA_COUNT:
+                        too_many_files = True
+                        break
+                if media:
+                    n.media = ", ".join(media)
+                if media_type:
+                    n.media_type = ", ".join(media_type)
+            n.poster_id = current_user.id
+            n.topic = request.form["topic"]
+            n.text = request.form["text"]
+            db_sess.add(n)
+            db_sess.commit()
+            if too_many_files:
+                flash("Новость отправлена, но был превышен лимит файлов на одну новость, поэтому"
+                      " часть из них была отброшена", "warning")
+            else:
+                flash("Новость успешно отправлена", "success")
+        else:
+            flash("Нехорошо рыться в HTML для деструктивных действий", "danger")
+        return redirect("/news")
 
 
 @app.route("/logout")

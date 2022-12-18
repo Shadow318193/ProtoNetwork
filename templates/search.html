@@ -1,5 +1,14 @@
 {% extends 'base.html' %}
 {% block main_content %}
+    {% if last_n %}
+    <h3 class="text-center">Последняя новость</h3>
+    <div class="card p-3">
+        <p class="text-end">Дата публикации: <i>{{ last_n_time }}</i></p>
+        <h3 class="text-center pb-3">{{ last_n.topic }}</h3>
+        <a href="/news" class="btn btn-info">Подробнее</a>
+    </div>
+    <div class="pb-5"></div>
+    {% endif %}
     <h1 class="text-center pb-3">Поиск</h1>
     <form method="post" role="search">
         <div class="form-group mb-5">
@@ -15,8 +24,10 @@
             <div class="card p-3" style="overflow: auto; display: flex; flex-direction: row;">
         {% for user in users %}
                     <div class="card" style="min-width: 18rem; width: 18rem; margin: 0 5px;">
-                        {% if user.avatar == None %}
+                        {% if user.avatar == None and not user.is_banned %}
                             <img src="/static/media/default.png" width="256" height="256" style="margin: 0 auto;" class="img-thumbnail mt-3" alt="{{ user.surname }} {{ user.name }}">
+                        {% elif user.is_banned %}
+                            <img src="/static/media/ban.jpg" width="256" height="256" style="margin: 0 auto;" class="img-thumbnail mt-3" alt="{{ user.surname }} {{ user.name }}">
                         {% else %}
                             <img src="/static/media/from_users/avatars/{{ user.avatar }}" style="object-fit: cover; width: 256px; height: 256px; margin: 0 auto;" class="img-thumbnail mt-3" alt="{{ user.surname }} {{ user.name }}">
                         {% endif %}
@@ -45,7 +56,7 @@
             </div>
         </div>
     {% else %}
-        {% if users_c %}
+        {% if text_to_search %}
         <h3 class="pb-3 text-center">Сходств не найдено</h3>
         {% else %}
         <h3 class="pb-3 text-center">Других пользователей пока что нет</h3>
