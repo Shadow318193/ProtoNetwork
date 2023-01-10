@@ -1,4 +1,4 @@
-from flask import Flask, request, render_template, redirect, abort, flash
+from flask import Flask, request, render_template, redirect, abort, flash, session
 from flask_login import LoginManager, login_user, logout_user, login_required, current_user
 
 from werkzeug.security import generate_password_hash, check_password_hash
@@ -48,6 +48,13 @@ def make_readble_time(t: datetime.datetime):
     return new_t
 
 
+def make_text_news(text: str):
+    if len(text) > 100:
+        return text[:100] + "..."
+    else:
+        return text
+
+
 accept_avatars = ",".join([make_accept_for_html(x) for x in AVATAR_TYPES])
 accept_post_media = ",".join([make_accept_for_html(x) for x in POST_MEDIA_TYPES])
 
@@ -63,6 +70,15 @@ login_manager.login_message = "Cмотреть данную страницу/д�
 def load_user(user_id: int):
     db_sess = db_session.create_session()
     return db_sess.query(User).filter(User.id == user_id).first()
+
+
+def name_is_correct(name_s: str):
+    if not name_s.replace(" ", "") or len(name_s) > 32:
+        return False
+    for i in name_s.lower():
+        if i not in "абвгдеёжзийклмнопрстуфхцчшщъыьэюя":
+            return False
+    return True
 
 
 def login_is_correct(login_s: str):
@@ -167,7 +183,8 @@ def user_page(username):
                                    max_size=app.config['MAX_CONTENT_LENGTH'] // 1024 // 1024,
                                    max_count=MAX_MEDIA_COUNT, post_media=post_media, post_media_type=post_media_type,
                                    post_media_count=post_media_count, user_req=user_req, user_friend=user_friend,
-                                   the_user_is_friend=the_user_is_friend, last_n=last_n, last_n_time=last_n_time)
+                                   the_user_is_friend=the_user_is_friend, last_n=last_n, last_n_time=last_n_time,
+                                   last_n_text=make_text_news(last_n.text))
         elif request.method == "POST":
             if current_user.is_authenticated:
                 if "like_button" in request.form and (current_user == user or not user.posts_only_for_friends):
@@ -303,48 +320,54 @@ def user_page(username):
 def settings():
     update_user_auth_time()
     if request.method == "GET":
+        if current_user.is_banned:
+            flash("Нельзя настраивать забаненный аккаунт", "danger")
+            return redirect("/user/" + current_user.login)
         return render_template("settings.html", current_user=current_user, accept_avatars=accept_avatars)
     elif request.method == "POST":
         db_sess = db_session.create_session()
-        user = db_sess.query(User).filter(User.id == current_user.id).first()
-        if "clear_button" in request.form and user.avatar:
-            if os.path.isfile("static/media/from_users/avatars/" + user.avatar):
-                os.remove("static/media/from_users/avatars/" + user.avatar)
-            user.avatar = None
-            db_sess.commit()
-        elif "set_button" in request.form:
-            if request.form.get("name"):
-                user.name = request.form["name"]
-            if request.form.get("surname"):
-                user.surname = request.form["surname"]
-            if request.form.get("login"):
-                existing_user = db_sess.query(User).filter(User.login == request.form["login"]).first()
-                if existing_user:
-                    flash("Ошибка обновления: кто-то уже есть с таким логином", "danger")
-                    return redirect("/user/" + current_user.login)
-            if request.form.get("email"):
-                existing_user = db_sess.query(User).filter(User.email == request.form["email"]).first()
-                if existing_user:
-                    flash("Ошибка обновления: кто-то уже есть с такой почтой", "danger")
-                    return redirect("/user/" + current_user.login)
-            if request.form.get("only_friends"):
-                user.posts_only_for_friends = True
-            else:
-                user.posts_only_for_friends = False
-            if request.form.get("messages_only_friends"):
-                user.talk_only_with_friends = True
-            else:
-                user.talk_only_with_friends = False
-            file = request.files["file"]
-            if file and allowed_type(file.filename, AVATAR_TYPES):
-                if user.avatar != None:
-                    if os.path.isfile("static/media/from_users/avatars/" + user.avatar):
-                        os.remove("static/media/from_users/avatars/" + user.avatar)
-                filename = "avatar" + str(user.id) + "." + file.filename.rsplit('.', 1)[1].lower()
-                file.save(os.path.join(app.config['UPLOAD_FOLDER'] + "/avatars", filename))
-                user.avatar = filename
-            db_sess.commit()
-        flash("Настройки обновлены", "success")
+        if not current_user.is_banned:
+            user = db_sess.query(User).filter(User.id == current_user.id).first()
+            if "clear_button" in request.form and user.avatar:
+                if os.path.isfile("static/media/from_users/avatars/" + user.avatar):
+                    os.remove("static/media/from_users/avatars/" + user.avatar)
+                user.avatar = None
+                db_sess.commit()
+            elif "set_button" in request.form:
+                if request.form.get("name"):
+                    user.name = request.form["name"]
+                if request.form.get("surname"):
+                    user.surname = request.form["surname"]
+                if request.form.get("login"):
+                    existing_user = db_sess.query(User).filter(User.login == request.form["login"]).first()
+                    if existing_user:
+                        flash("Ошибка обновления: кто-то уже есть с таким логином", "danger")
+                        return redirect("/user/" + current_user.login)
+                if request.form.get("email"):
+                    existing_user = db_sess.query(User).filter(User.email == request.form["email"]).first()
+                    if existing_user:
+                        flash("Ошибка обновления: кто-то уже есть с такой почтой", "danger")
+                        return redirect("/user/" + current_user.login)
+                if request.form.get("only_friends"):
+                    user.posts_only_for_friends = True
+                else:
+                    user.posts_only_for_friends = False
+                if request.form.get("messages_only_friends"):
+                    user.talk_only_with_friends = True
+                else:
+                    user.talk_only_with_friends = False
+                file = request.files["file"]
+                if file and allowed_type(file.filename, AVATAR_TYPES):
+                    if user.avatar != None:
+                        if os.path.isfile("static/media/from_users/avatars/" + user.avatar):
+                            os.remove("static/media/from_users/avatars/" + user.avatar)
+                    filename = "avatar" + str(user.id) + "." + file.filename.rsplit('.', 1)[1].lower()
+                    file.save(os.path.join(app.config['UPLOAD_FOLDER'] + "/avatars", filename))
+                    user.avatar = filename
+                db_sess.commit()
+            flash("Настройки обновлены", "success")
+        else:
+            flash("Нельзя настраивать забаненный аккаунт", "danger")
         return redirect("/user/" + current_user.login)
 
 
@@ -370,7 +393,8 @@ def friends():
         return render_template("friends.html", users_req=requested_users_real, users_friends=friends_users_real,
                                current_user=current_user, users_req_c=len(requested_users),
                                users_friends_c=len(friends_users), users_req_l=requested_users,
-                               users_friends_l=friends_users, last_n=last_n, last_n_time=last_n_time)
+                               users_friends_l=friends_users, last_n=last_n, last_n_time=last_n_time,
+                               last_n_text=make_text_news(last_n.text))
     elif request.method == "POST":
         if "make_friends_button" in request.form or "not_friends_button" in request.form:
             if "make_friends_button" in request.form:
@@ -420,13 +444,13 @@ def signup():
             return redirect("/user/" + current_user.login)
         return render_template("signup.html")
     elif request.method == "POST":
-        if not request.form["name"].replace(" ", "") or len(request.form["name"]) > 32:
+        if not name_is_correct(request.form["name"]):
             flash("Ошибка регистрации: имя не удовлетворяет требованию", "danger")
             return redirect("/signup")
-        elif not request.form["surname"].replace(" ", "") or len(request.form["surname"]) > 32:
+        elif not name_is_correct(request.form["surname"]):
             flash("Ошибка регистрации: фамилия не удовлетворяет требованию", "danger")
             return redirect("/signup")
-        elif not request.form["login"].replace(" ", "") or not login_is_correct(request.form["login"]):
+        elif not login_is_correct(request.form["login"]):
             flash("Ошибка регистрации: логин не удовлетворяет требованию", "danger")
             return redirect("/signup")
         elif len(request.form["email"]) > 64:
@@ -520,7 +544,7 @@ def search():
             users_c = users.count()
         return render_template("search.html", current_user=current_user, text_to_search=text_to_search,
                                users=needed_users if text_to_search else users, users_c=users_c,
-                               last_n=last_n, last_n_time=last_n_time)
+                               last_n=last_n, last_n_time=last_n_time, last_n_text=make_text_news(last_n.text))
     elif request.method == "POST":
         return redirect("/search?req=" + request.form.get("text_to_search").replace(" ", "+"))
 
