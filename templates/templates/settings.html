@@ -1,0 +1,62 @@
+{% extends 'base.html' %}
+{% block main_content %}
+    <h1 class="text_center">Настройки аккаунта</h1>
+    <form method="post" enctype="multipart/form-data">
+        <div class="form-group mb-5">
+            <label for="name">Поменять имя</label>
+            <input class="form-control" id="name" name="name" placeholder="Новое имя">
+        </div>
+        <div class="form-group mb-5">
+            <label for="surname">Поменять фамилию</label>
+            <input class="form-control" id="surname" name="surname" placeholder="Новая фамилия">
+        </div>
+        <div class="form-group mb-5">
+            <label for="login">Поменять логин</label>
+            <input class="form-control" id="login" name="login" placeholder="Новый логин">
+        </div>
+        <div class="form-group mb-5">
+            <label for="email">Поменять электронную почту</label>
+            <input type="email" class="form-control" id="email" name="email" placeholder="Новая электронная почта">
+        </div>
+        <div class="form-check pb-5">
+            {% if current_user.posts_only_for_friends %}
+            <input class="form-check-input" type="checkbox" value="0" id="only_friends" name="only_friends" checked>
+            {% else %}
+            <input class="form-check-input" type="checkbox" value="1" id="only_friends" name="only_friends">
+            {% endif %}
+            <label class="form-check-label" for="only_friends">
+                Посты профиля могут смотреть только друзья.
+            </label>
+        </div>
+        <div class="form-check pb-5">
+            {% if current_user.talk_only_with_friends %}
+            <input class="form-check-input" type="checkbox" value="0" id="messages_only_friends" name="messages_only_friends" checked>
+            {% else %}
+            <input class="form-check-input" type="checkbox" value="1" id="messages_only_friends" name="messages_only_friends">
+            {% endif %}
+            <label class="form-check-label" for="messages_only_friends">
+                Получать сообщения от других пользователей, не являющихся друзьями.
+            </label>
+        </div>
+        <div class="pb-5">
+            <div class="card" style="width: 22rem; margin: 0 auto;">
+                {% if current_user.avatar == None %}
+                <img src="/static/media/default.png" width="256" height="256" style="margin: 0 auto;" class="img-thumbnail mt-3" alt="{{ current_user.surname }} {{ current_user.name }}">
+                {% else %}
+                <img src="/static/media/from_users/avatars/{{ current_user.avatar }}" style="object-fit: cover; width: 256px; height: 256px; margin: 0 auto;" class="img-thumbnail mt-3" alt="{{ current_user.surname }} {{ current_user.name }}">
+                {% endif %}
+                <div class="card-body">
+                    <label for="file">Приложи новую фотографию</label>
+                    <input type=file class="form-control-file" id="file" name="file" accept="{{ accept_avatars }}">
+                    <div class="text-center mt-3">
+                        <button type="submit" class="btn btn-primary" id="clear_button" name="clear_button">Убрать аватарку</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="text-center mb-5">
+            <a href="/user/{{ current_user.login }}" class="btn btn-primary btn-lg">Отмена</a>
+            <button type="submit" class="btn btn-primary btn-lg" id="set_button" name="set_button">Изменить</button>
+        </div>
+    </form>
+{% endblock %}
