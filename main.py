@@ -648,10 +648,10 @@ def e404(code):
 def e500(code):
     update_user_auth_time()
     print(code)
-    return render_template("error.html", current_user=current_user, link=request.args.get("from"),
-                           code=500, err="Извини за неудобство, но сайт по какой-то причине подписал отказ в "
-                                          "показе страницы. Сейчас мы активно работаем над причиной проблемы и"
-                                          " исправляем её", pics=PICS_500)
+    return render_template("error.html", current_user=current_user, code=500,
+                           err="Извини за неудобство, но сайт по какой-то причине подписал отказ в "
+                           "показе страницы. Сейчас мы активно работаем над причиной проблемы и"
+                           " исправляем её", pics=PICS_500)
 
 
 if __name__ == "__main__":
