@@ -243,8 +243,8 @@ def user_page(username):
                         else:
                             flash("Пост успешно отправлен", "success")
                     elif current_user.is_banned:
-                        flash("Ты был забанен, поэтому отправлять с этого аккаунта больше ничего нельзя."
-                              "Только смотреть. Причина бана: " + current_user.ban_reason, "danger")
+                        flash("Ты был забанен, поэтому отправлять с этого аккаунта больше ничего нельзя, "
+                              "только смотреть. Причина бана: " + current_user.ban_reason, "danger")
                 else:
                     if "ban_user_button" in request.form and current_user.is_admin and not user.is_banned:
                         if request.form.get("reason_text") and not user.is_admin:
