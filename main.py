@@ -184,7 +184,7 @@ def user_page(username):
                                    max_count=MAX_MEDIA_COUNT, post_media=post_media, post_media_type=post_media_type,
                                    post_media_count=post_media_count, user_req=user_req, user_friend=user_friend,
                                    the_user_is_friend=the_user_is_friend, last_n=last_n, last_n_time=last_n_time,
-                                   last_n_text=make_text_news(last_n.text))
+                                   last_n_text=make_text_news(last_n.text) if last_n else None)
         elif request.method == "POST":
             if current_user.is_authenticated:
                 if "like_button" in request.form and (current_user == user or not user.posts_only_for_friends):
@@ -242,6 +242,11 @@ def user_page(username):
                                   " часть из них была отброшена", "warning")
                         else:
                             flash("Пост успешно отправлен", "success")
+                    elif "delete_post_button" in request.form and not current_user.is_banned:
+                        post = db_sess.query(Post).filter(Post.id == request.form["delete_post_button"]).first()
+                        db_sess.delete(post)
+                        db_sess.commit()
+                        flash("Пост успешно удалён", "success")
                     elif current_user.is_banned:
                         flash("Ты был забанен, поэтому отправлять с этого аккаунта больше ничего нельзя, "
                               "только смотреть. Причина бана: " + current_user.ban_reason, "danger")
@@ -394,7 +399,7 @@ def friends():
                                current_user=current_user, users_req_c=len(requested_users),
                                users_friends_c=len(friends_users), users_req_l=requested_users,
                                users_friends_l=friends_users, last_n=last_n, last_n_time=last_n_time,
-                               last_n_text=make_text_news(last_n.text))
+                               last_n_text=make_text_news(last_n.text) if last_n else None)
     elif request.method == "POST":
         if "make_friends_button" in request.form or "not_friends_button" in request.form:
             if "make_friends_button" in request.form:
@@ -544,7 +549,8 @@ def search():
             users_c = users.count()
         return render_template("search.html", current_user=current_user, text_to_search=text_to_search,
                                users=needed_users if text_to_search else users, users_c=users_c,
-                               last_n=last_n, last_n_time=last_n_time, last_n_text=make_text_news(last_n.text))
+                               last_n=last_n, last_n_time=last_n_time,
+                               last_n_text=make_text_news(last_n.text) if last_n else None)
     elif request.method == "POST":
         return redirect("/search?req=" + request.form.get("text_to_search").replace(" ", "+"))
 

@@ -125,7 +125,7 @@
     {% endif %}
     {% if (current_user == user) or (the_user_is_friend) or not (user.posts_only_for_friends) %}
     {% for post in posts[::-1] %}
-        <div class="card p-3">
+        <div class="card p-3" id="post_{{ post.id }}">
             <div class="row pb-3">
                 <div class="col pb-3">
                     <div>
@@ -163,14 +163,23 @@
             {% endif %}
             <form method="post" class="row">
                 <div class="col">
-                    <button type="submit" class="btn btn-outline-secondary" id="like_button" name="like_button" value="{{ post.id }}"><img class="me-2" width="32" src="
-                    {% if current_user.id|string() in post_likers[post.id] and current_user.is_authenticated %}
-                    /static/media/like_activated.svg
-                    {% else %}
-                    /static/media/like.svg
-                    {% endif %}"
-                    >{{ post.likes }}</button>
+                    <div class="text-center">
+                        <button type="submit" class="btn btn-outline-secondary" style="width: 90%;" id="like_button" name="like_button" value="{{ post.id }}"><img class="me-2" width="32" src="
+                        {% if current_user.id|string() in post_likers[post.id] and current_user.is_authenticated %}
+                        /static/media/like_activated.svg
+                        {% else %}
+                        /static/media/like.svg
+                        {% endif %}"
+                        >{{ post.likes }}</button>
+                    </div>
                 </div>
+                {% if current_user == user %}
+                <div class="col">
+                    <div class="text-center">
+                        <button type="submit" class="btn btn-danger" style="width: 90%; height: 46px;" id="delete_post_button" name="delete_post_button" value="{{ post.id }}">Удалить пост</button>
+                    </div>
+                </div>
+                {% endif %}
             </form>
         </div>
         <div class="pb-5"></div>
