@@ -24,6 +24,7 @@ POST_MEDIA_VID_TYPES = ["webm", "mp4"]
 POST_MEDIA_AUD_TYPES = ["mp3", "wav"]
 POST_MEDIA_TYPES = POST_MEDIA_VID_TYPES + POST_MEDIA_PIC_TYPES + POST_MEDIA_AUD_TYPES
 MAX_MEDIA_COUNT = 8
+POSTS_IN_PAGE_MAX = 3
 
 PICS_404 = ["masha.png", "johnny.gif"]
 PICS_500 = ["masyanya.png", "vovka.png", "baby.jpg", "fedor.png"]
@@ -141,6 +142,15 @@ def user_page(username):
     db_sess = db_session.create_session()
     user = db_sess.query(User).filter(User.login == username).first()
     if user:
+        if not request.args.get("page"):
+            return redirect("/user/" + username + "?page=1")
+        else:
+            try:
+                page = int(request.args["page"])
+                if page < 1:
+                    return redirect("/user/" + username + "?page=1")
+            except ValueError:
+                return redirect("/user/" + username + "?page=1")
         user_time = make_readble_time(user.last_auth)
         if current_user.is_authenticated and user != current_user:
             the_user_is_friend = str(current_user.id) in user.friends.split(", ")
@@ -156,6 +166,15 @@ def user_page(username):
             user_friend = None
             the_user_is_friend = None
         posts = db_sess.query(Post).filter(user.id == Post.poster_id)
+        posts_c = posts.count()
+        if posts_c:
+            max_page_of_user = posts_c // POSTS_IN_PAGE_MAX
+            if posts_c % POSTS_IN_PAGE_MAX:
+                max_page_of_user += 1
+        else:
+            max_page_of_user = 1
+        if page > max_page_of_user and page != 1:
+            return redirect("/user/" + username + "?page=" + str(max_page_of_user))
         if request.method == "GET":
             last_n = db_sess.query(News).get(db_sess.query(News).count())
             if last_n:
@@ -176,16 +195,25 @@ def user_page(username):
                 post_likers[post.id] = post.who_liked.split(", ")
                 if "" in post_likers[post.id]:
                     post_likers[post.id].remove("")
-            return render_template("user.html", user=user, current_user=current_user, posts=posts,
-                                   posts_c=posts.count(), media_pics=POST_MEDIA_PIC_TYPES, post_likers=post_likers,
+            return render_template("user.html", user=user, current_user=current_user, posts=posts, posts_c=posts_c,
+                                   media_pics=POST_MEDIA_PIC_TYPES, post_likers=post_likers,
                                    media_vid=POST_MEDIA_VID_TYPES, media_aud=POST_MEDIA_AUD_TYPES,
                                    accept_files=accept_post_media, post_time=post_time, user_time=user_time,
                                    max_size=app.config['MAX_CONTENT_LENGTH'] // 1024 // 1024,
                                    max_count=MAX_MEDIA_COUNT, post_media=post_media, post_media_type=post_media_type,
                                    post_media_count=post_media_count, user_req=user_req, user_friend=user_friend,
                                    the_user_is_friend=the_user_is_friend, last_n=last_n, last_n_time=last_n_time,
-                                   last_n_text=make_text_news(last_n.text) if last_n else None)
+                                   last_n_text=make_text_news(last_n.text) if last_n else None, page=page,
+                                   page_max=POSTS_IN_PAGE_MAX, max_page_of_user=max_page_of_user)
         elif request.method == "POST":
+            if "to_the_beginning_button" in request.form:
+                return redirect("/user/" + username + "?page=" + str(request.form["to_the_beginning_button"]))
+            elif "to_the_end_button" in request.form:
+                return redirect("/user/" + username + "?page=" + str(request.form["to_the_end_button"]))
+            elif "to_the_previous_button" in request.form:
+                return redirect("/user/" + username + "?page=" + str(request.form["to_the_previous_button"]))
+            elif "to_the_next_button" in request.form:
+                return redirect("/user/" + username + "?page=" + str(request.form["to_the_next_button"]))
             if current_user.is_authenticated:
                 if "like_button" in request.form and (current_user == user or not user.posts_only_for_friends):
                     post = db_sess.query(Post).filter(Post.id == request.form["like_button"]).first()
@@ -204,7 +232,7 @@ def user_page(username):
                         post.who_liked = ", ".join(who_liked)
                         db_sess.commit()
                         flash(msg, "success")
-                    return redirect("/user/" + username)
+                    return redirect("/user/" + username + "?page=" + str(page))
                 if current_user == user:
                     if "about_button" in request.form and not current_user.is_banned:
                         user.about = request.form["about_input"]
@@ -242,6 +270,7 @@ def user_page(username):
                                   " часть из них была отброшена", "warning")
                         else:
                             flash("Пост успешно отправлен", "success")
+                        return redirect("/user/" + username + "?page=1")
                     elif "delete_post_button" in request.form and not current_user.is_banned:
                         post = db_sess.query(Post).filter(Post.id == request.form["delete_post_button"]).first()
                         db_sess.delete(post)
@@ -266,6 +295,14 @@ def user_page(username):
                         user.is_banned = False
                         db_sess.commit()
                         flash("Пользователь успешно разбанен", "success")
+                    elif "unmake_user_news_pub_button" in request.form and current_user.is_news_publisher and not user.is_banned:
+                        user.is_news_publisher = False
+                        db_sess.commit()
+                        flash("У пользователя отобрана возможность публиковать новости", "success")
+                    elif "make_user_news_pub_button" in request.form and not current_user.is_news_publisher and not user.is_banned:
+                        user.is_news_publisher = True
+                        db_sess.commit()
+                        flash("Пользователю дана возможность публиковать новости", "success")
                     elif "friend_request_button" in request.form and not user_req and not user_friend:
                         user_friends_req = user.friends_req.split(", ")
                         if "" in user_friends_req:
@@ -313,7 +350,7 @@ def user_page(username):
                         flash("Этого пользователя нет в друзьях", "danger")
                     else:
                         flash("Нехорошо рыться в HTML для деструктивных действий", "danger")
-                return redirect("/user/" + username)
+                return redirect("/user/" + username + "?page=" + str(page))
             else:
                 abort(401)
     else:

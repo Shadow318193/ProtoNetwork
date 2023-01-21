@@ -44,6 +44,15 @@
                 <a href="/settings" class="btn btn-info" style="width: 18rem;">Настройки аккаунта</a>
             {% else %}
             {% if current_user.is_admin %}
+            {% if user.is_news_publisher %}
+                <form class="pb-2" method="post">
+                    <button type="submit" class="btn btn-info" style="width: 18rem;" id="unmake_user_news_pub_button" name="unmake_user_news_pub_button">Отобрать возможность пользователю публиковать новости</button>
+                </form>
+            {% else %}
+                <form class="pb-2" method="post">
+                    <button type="submit" class="btn btn-info" style="width: 18rem;" id="make_user_news_pub_button" name="make_user_news_pub_button">Дать возможность пользователю публиковать новости</button>
+                </form>
+            {% endif %}
             {% if user.is_banned %}
                 <form class="pb-2" method="post">
                     <button type="submit" class="btn btn-info" style="width: 18rem;" id="unban_user_button" name="unban_user_button">Разбанить пользователя</button>
@@ -124,7 +133,7 @@
         <h1>У пользователя нет постов.</h1>
     {% endif %}
     {% if (current_user == user) or (the_user_is_friend) or not (user.posts_only_for_friends) %}
-    {% for post in posts[::-1] %}
+    {% for post in posts[::-1][(page-1)*page_max:page*page_max] %}
         <div class="card p-3" id="post_{{ post.id }}">
             <div class="row pb-3">
                 <div class="col pb-3">
@@ -147,7 +156,9 @@
                     <p class="text-end mt-3">Дата публикации: <i>{{ post_time[post.id] }}</i></p>
                 </div>
             </div>
+            {% if post.text %}
             <p style="white-space: pre-wrap; padding: 0 3%;" class="pb-3">{{ post.text }}</p>
+            {% endif %}
             {% if post_media[post.id] %}
             <div style="display: flex; flex-flow: row wrap;" class="pb-3">
                 {% for m in range(post_media_count[post.id]) %}
@@ -185,5 +196,51 @@
         <div class="pb-5"></div>
     {% endfor %}
     {% endif %}
+
+    <form class="row" method="post">
+        {% if page != 1 %}
+        <div class="col text-center">
+            <button type="submit" class="btn btn-lg btn-info" value="1" id="to_the_beginning_button" name="to_the_beginning_button">1</button>
+        </div>
+        {% else %}
+        <div class="col text-center">
+            <button disabled class="btn btn-lg btn-outline-info">{{ page }}</button>
+        </div>
+        {% endif %}
+        {% if max_page_of_user > 2 %}
+        <div class="col text-center">
+            ...
+        </div>
+        {% endif %}
+        {% if page - 1 > 1 %}
+        <div class="col text-center">
+            <button type="submit" class="btn btn-lg btn-info" value="{{ page - 1 }}" id="to_the_previous_button" name="to_the_previous_button">{{ page - 1 }}</button>
+        </div>
+        {% endif %}
+        {% if page != 1 and page != max_page_of_user %}
+        <div class="col text-center">
+            <button disabled class="btn btn-lg btn-outline-info">{{ page }}</button>
+        </div>
+        {% endif %}
+        {% if page + 1 < max_page_of_user %}
+        <div class="col text-center">
+            <button type="submit" class="btn btn-lg btn-info" value="{{ page + 1 }}" id="to_the_next_button" name="to_the_next_button">{{ page + 1 }}</button>
+        </div>
+        {% endif %}
+        {% if max_page_of_user >= 2 %}
+        <div class="col text-center">
+            ...
+        </div>
+        {% endif %}
+        {% if page != max_page_of_user %}
+        <div class="col text-center">
+            <button type="submit" class="btn btn-lg btn-info" value="{{ max_page_of_user }}" id="to_the_end_button" name="to_the_end_button">{{ max_page_of_user }}</button>
+        </div>
+        {% else %}
+        <div class="col text-center">
+            <button disabled class="btn btn-lg btn-outline-info">{{ page }}</button>
+        </div>
+        {% endif %}
+    </form>
 
 {% endblock %}
