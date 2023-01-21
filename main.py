@@ -274,9 +274,10 @@ def user_page(username):
                     elif "delete_post_button" in request.form and not current_user.is_banned:
                         post = db_sess.query(Post).filter(Post.id == request.form["delete_post_button"]).first()
                         files_to_delete = post.media.split(",")
-                        for f in files_to_delete:
-                            if os.path.isfile("static/media/from_users/" + f):
-                                os.remove("static/media/from_users/" + f)
+                        if files_to_delete:
+                            for f in files_to_delete:
+                                if os.path.isfile("static/media/from_users/" + f):
+                                    os.remove("static/media/from_users/" + f)
                         db_sess.delete(post)
                         db_sess.commit()
                         flash("Пост успешно удалён", "success")
@@ -302,9 +303,10 @@ def user_page(username):
                     elif "delete_post_button" in request.form and not current_user.is_banned and current_user.is_admin:
                         post = db_sess.query(Post).filter(Post.id == request.form["delete_post_button"]).first()
                         files_to_delete = post.media.split(",")
-                        for f in files_to_delete:
-                            if os.path.isfile("static/media/from_users/" + f):
-                                os.remove("static/media/from_users/" + f)
+                        if files_to_delete:
+                            for f in files_to_delete:
+                                if os.path.isfile("static/media/from_users/" + f):
+                                    os.remove("static/media/from_users/" + f)
                         db_sess.delete(post)
                         db_sess.commit()
                         flash("Пост успешно удалён", "success")
