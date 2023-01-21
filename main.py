@@ -1,4 +1,4 @@
-from flask import Flask, request, render_template, redirect, abort, flash, session
+from flask import Flask, request, render_template, redirect, abort, flash
 from flask_login import LoginManager, login_user, logout_user, login_required, current_user
 
 from werkzeug.security import generate_password_hash, check_password_hash
@@ -24,7 +24,7 @@ POST_MEDIA_VID_TYPES = ["webm", "mp4"]
 POST_MEDIA_AUD_TYPES = ["mp3", "wav"]
 POST_MEDIA_TYPES = POST_MEDIA_VID_TYPES + POST_MEDIA_PIC_TYPES + POST_MEDIA_AUD_TYPES
 MAX_MEDIA_COUNT = 8
-POSTS_IN_PAGE_MAX = 3
+POSTS_IN_PAGE_MAX = 10
 
 PICS_404 = ["masha.png", "johnny.gif"]
 PICS_500 = ["masyanya.png", "vovka.png", "baby.jpg", "fedor.png"]

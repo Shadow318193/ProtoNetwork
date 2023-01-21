@@ -187,7 +187,7 @@
                 {% if current_user == user %}
                 <div class="col">
                     <div class="text-center">
-                        <button type="submit" class="btn btn-danger" style="width: 90%; height: 46px;" id="delete_post_button" name="delete_post_button" value="{{ post.id }}">Удалить пост</button>
+                        <button type="submit" class="btn btn-danger" style="width: 90%;" id="delete_post_button" name="delete_post_button" value="{{ post.id }}">Удалить пост</button>
                     </div>
                 </div>
                 {% endif %}
@@ -231,7 +231,6 @@
         <div class="col text-center">
             ...
         </div>
-        {% endif %}
         {% if page != max_page_of_user %}
         <div class="col text-center">
             <button type="submit" class="btn btn-lg btn-info" value="{{ max_page_of_user }}" id="to_the_end_button" name="to_the_end_button">{{ max_page_of_user }}</button>
@@ -240,6 +239,7 @@
         <div class="col text-center">
             <button disabled class="btn btn-lg btn-outline-info">{{ page }}</button>
         </div>
+        {% endif %}
         {% endif %}
     </form>
 
