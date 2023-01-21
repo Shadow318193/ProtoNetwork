@@ -273,6 +273,10 @@ def user_page(username):
                         return redirect("/user/" + username + "?page=1")
                     elif "delete_post_button" in request.form and not current_user.is_banned:
                         post = db_sess.query(Post).filter(Post.id == request.form["delete_post_button"]).first()
+                        files_to_delete = post.media.split(",")
+                        for f in files_to_delete:
+                            if os.path.isfile("static/media/from_users/" + f):
+                                os.remove("static/media/from_users/" + f)
                         db_sess.delete(post)
                         db_sess.commit()
                         flash("Пост успешно удалён", "success")
@@ -295,6 +299,15 @@ def user_page(username):
                         user.is_banned = False
                         db_sess.commit()
                         flash("Пользователь успешно разбанен", "success")
+                    elif "delete_post_button" in request.form and not current_user.is_banned and current_user.is_admin:
+                        post = db_sess.query(Post).filter(Post.id == request.form["delete_post_button"]).first()
+                        files_to_delete = post.media.split(",")
+                        for f in files_to_delete:
+                            if os.path.isfile("static/media/from_users/" + f):
+                                os.remove("static/media/from_users/" + f)
+                        db_sess.delete(post)
+                        db_sess.commit()
+                        flash("Пост успешно удалён", "success")
                     elif "unmake_user_news_pub_button" in request.form and current_user.is_news_publisher and not user.is_banned:
                         user.is_news_publisher = False
                         db_sess.commit()
@@ -613,7 +626,7 @@ def news_page():
                                media_vid=POST_MEDIA_VID_TYPES, media_aud=POST_MEDIA_AUD_TYPES)
     elif request.method == "POST":
         if (current_user.is_admin or current_user.is_news_publisher) and not current_user.is_banned and \
-                current_user.is_authenticated:
+                current_user.is_authenticated and "post_button" in request.form:
             n = News()
             new_id = db_sess.query(News).count() + 1
             files = request.files.getlist("files[]")
@@ -647,6 +660,12 @@ def news_page():
                       " часть из них была отброшена", "warning")
             else:
                 flash("Новость успешно отправлена", "success")
+        elif (current_user.is_admin or current_user.is_news_publisher) and not current_user.is_banned and \
+                current_user.is_authenticated and "delete_n_button" in request.form:
+            n = db_sess.query(News).filter(News.id == request.form["delete_n_button"]).first()
+            db_sess.delete(n)
+            db_sess.commit()
+            flash("Новость успешно удалена", "success")
         else:
             flash("Нехорошо рыться в HTML для деструктивных действий", "danger")
         return redirect("/news")

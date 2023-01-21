@@ -44,6 +44,7 @@
                 <a href="/settings" class="btn btn-info" style="width: 18rem;">Настройки аккаунта</a>
             {% else %}
             {% if current_user.is_admin %}
+            {% if not user.is_admin %}
             {% if user.is_news_publisher %}
                 <form class="pb-2" method="post">
                     <button type="submit" class="btn btn-info" style="width: 18rem;" id="unmake_user_news_pub_button" name="unmake_user_news_pub_button">Отобрать возможность пользователю публиковать новости</button>
@@ -52,6 +53,7 @@
                 <form class="pb-2" method="post">
                     <button type="submit" class="btn btn-info" style="width: 18rem;" id="make_user_news_pub_button" name="make_user_news_pub_button">Дать возможность пользователю публиковать новости</button>
                 </form>
+            {% endif %}
             {% endif %}
             {% if user.is_banned %}
                 <form class="pb-2" method="post">
@@ -184,7 +186,7 @@
                         >{{ post.likes }}</button>
                     </div>
                 </div>
-                {% if current_user == user %}
+                {% if current_user == user or (current_user.is_admin and not user.is_admin) %}
                 <div class="col">
                     <div class="text-center">
                         <button type="submit" class="btn btn-danger" style="width: 90%;" id="delete_post_button" name="delete_post_button" value="{{ post.id }}">Удалить пост</button>
