@@ -40,6 +40,8 @@
                             {% endif %}
                             {% if user.is_admin %}
                                 <h5 class="card-text text-center" style="color: #ff0000;">Администратор</h5>
+                            {% elif user.is_news_publisher %}
+                                <h5 class="card-text text-center" style="color: #ff0000;">СМИ</h5>
                             {% endif %}
                             <form method="post" class="text-center mt-3">
                                 <button type="submit" class="btn btn-primary" id="make_friends_button" name="make_friends_button" value="{{ user.id }}">Принять заявку</button>
@@ -85,6 +87,8 @@
                             {% endif %}
                             {% if user.is_admin %}
                                 <h5 class="card-text text-center" style="color: #ff0000;">Администратор</h5>
+                            {% elif user.is_news_publisher %}
+                                <h5 class="card-text text-center" style="color: #ff0000;">СМИ</h5>
                             {% endif %}
                             <div class="text-center mt-3">
                                 <a href="/user/{{ user.login }}" class="btn btn-primary">Перейти на стену</a>

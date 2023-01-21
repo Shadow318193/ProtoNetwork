@@ -35,6 +35,8 @@
                     {% endif %}
                     {% if user.is_admin %}
                         <h5 class="card-text text-center" style="color: #ff0000;">Администратор</h5>
+                    {% elif user.is_news_publisher %}
+                        <h5 class="card-text text-center" style="color: #ff0000;">СМИ</h5>
                     {% endif %}
                 </div>
             </div>
