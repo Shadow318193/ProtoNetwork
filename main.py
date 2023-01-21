@@ -665,6 +665,11 @@ def news_page():
         elif (current_user.is_admin or current_user.is_news_publisher) and not current_user.is_banned and \
                 current_user.is_authenticated and "delete_n_button" in request.form:
             n = db_sess.query(News).filter(News.id == request.form["delete_n_button"]).first()
+            if n.media:
+                files_to_delete = n.media.split(",")
+                for f in files_to_delete:
+                    if os.path.isfile("static/media/from_users/" + f):
+                        os.remove("static/media/from_users/" + f)
             db_sess.delete(n)
             db_sess.commit()
             flash("Новость успешно удалена", "success")
