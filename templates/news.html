@@ -31,7 +31,7 @@
             <h3 class="text-center py-1">{{ n.topic }}</h3>
             <p style="white-space: pre-wrap; padding: 0 3%;" class="py-3">{{ n.text }}</p>
             {% if n_media[n.id] %}
-            <div style="display: flex; flex-flow: row wrap;" class="pb-2">
+            <div style="flex-flow: row wrap;" class="d-flex justify-content-evenly pb-3">
                 {% for m in range(n_media_count[n.id]) %}
                     {% if n_media_type[n.id][m] in media_pics %}
                         <img class="img-thumbnail" style="max-height: 192px; min-height: 128px;" src="/static/media/from_users/{{ n_media[n.id][m] }}">

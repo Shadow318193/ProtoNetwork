@@ -164,7 +164,7 @@
             <p style="white-space: pre-wrap; padding: 0 3%;" class="pb-3">{{ post.text }}</p>
             {% endif %}
             {% if post_media[post.id] %}
-            <div style="display: flex; flex-flow: row wrap;" class="pb-3">
+            <div style="flex-flow: row wrap;" class="d-flex justify-content-evenly pb-3">
                 {% for m in range(post_media_count[post.id]) %}
                     {% if post_media_type[post.id][m] in media_pics %}
                         <img class="img-thumbnail" style="max-height: 192px; min-height: 128px;" src="/static/media/from_users/{{ post_media[post.id][m] }}">
