@@ -16,6 +16,7 @@ class Post(SqlAlchemyBase):
     media = db.Column(db.String, nullable=True)
     media_type = db.Column(db.String, nullable=True)
     creation_date = db.Column(db.DateTime, default=datetime.now)
+    parent_post = db.Column(db.Integer, nullable=True, default=None)
 
     user = orm.relation("User")
     # balance = orm.relation("Balance", back_populates='user', uselist=False)

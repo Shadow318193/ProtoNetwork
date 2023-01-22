@@ -91,7 +91,7 @@
         <div class="col">
             <p>В последний раз был в сети: <i>{{ user_time }}</i></p>
             <p>Друзей: {{ user.friends_num }}</p>
-            {% if current_user.is_authenticated and current_user.login == user.login %}
+            {% if current_user.is_authenticated and current_user.login == user.login and not current_user.is_banned %}
                 <h3>Обо мне:</h3>
                 <form method="post">
                     <div class="row pb-3">
@@ -111,7 +111,7 @@
         </div>
     </div>
     <div class="pb-3"></div>
-    {% if current_user.is_authenticated and current_user.login == user.login %}
+    {% if current_user.is_authenticated and current_user == user and not user.is_banned %}
     <div style="background-color: #cceeff;" class="card p-3">
         <h1 class="text-center pb-3">Написать новый пост</h1>
         <form method="post" enctype="multipart/form-data">
@@ -133,7 +133,7 @@
         <h1 class="text-center">Пользователь запретил смотреть свои посты другим пользователям, не являющимся его друзьями.</h1>
     {% elif posts_c %}
         <h1>Посты пользователя:</h1>
-    {% else %}
+    {% elif current_user != user %}
         <h1>У пользователя нет постов.</h1>
     {% endif %}
     {% if (current_user == user) or (the_user_is_friend) or not (user.posts_only_for_friends) %}
@@ -196,6 +196,61 @@
                 </div>
                 {% endif %}
             </form>
+            <div class="pb-3"></div>
+            <form method="post" style="background-color: #cceeff;" class="card p-3">
+                <h3 class="text-center pb-2">Оставить комментарий</h3>
+                <div class="form-group mb-2">
+                    <label for="comment_text">Введи текст</label>
+                    <textarea class="form-control" id="comment_text" name="comment_text" rows="2" placeholder="Текст комментария"></textarea>
+                </div>
+                <div class="text-center mb-2">
+                    <button type="submit" class="btn btn-primary" id="comment_button" name="comment_button" value="{{ post.id }}">Отправить</button>
+                </div>
+            </form>
+            <div class="pb-3"></div>
+            {% if comments[post.id] %}
+            {% for comment in comments[post.id] %}
+            <div class="card p-3">
+                <div class="row pb-3">
+                <div class="col pb-3">
+                    <div>
+                        {% if comments_posters[comment.id].avatar == None and not comments_posters[comment.id].is_banned %}
+                        <img src="/static/media/default.png" style="object-fit: cover; width: 64px; height: 64px; border-radius: 100px;" class="img-thumbnail" alt="{{ comments_posters[comment.id].surname }} {{ comments_posters[comment.id].name }}">
+                        {% elif comments_posters[comment.id].is_banned %}
+                        <img src="/static/media/ban.jpg" style="object-fit: cover; width: 64px; height: 64px; border-radius: 100px;" class="img-thumbnail" alt="{{ comments_posters[comment.id].surname }} {{ comments_posters[comment.id].name }}">
+                        {% else %}
+                        <img src="/static/media/from_users/avatars/{{ comments_posters[comment.id].avatar }}" style="object-fit: cover; width: 64px; height: 64px; border-radius: 100px;" class="img-thumbnail" alt="{{ comments_posters[comment.id].surname }} {{ comments_posters[comment.id].name }}">
+                        {% endif %}
+                        {% if comments_posters[comment.id].is_teacher %}
+                            <b>{{ comments_posters[comment.id].surname }} {{ comments_posters[comment.id].name }} {{ comments_posters[comment.id].patronymic }}</b> (@{{ comments_posters[comment.id].login }})
+                        {% else %}
+                            <b>{{ comments_posters[comment.id].surname }} {{ comments_posters[comment.id].name }}</b> (@{{ comments_posters[comment.id].login }})
+                        {% endif %}
+                    </div>
+                </div>
+                <div class="col pb-3">
+                    <p class="text-end mt-3">Дата публикации: <i>{{ comments_time[comment.id] }}</i></p>
+                </div>
+                </div>
+                {% if comment.text %}
+                    <p style="white-space: pre-wrap; padding: 0 3%;" class="pb-1">{{ comment.text }}</p>
+                {% endif %}
+                <form method="post" class="row">
+                <div class="col">
+                    <div class="text-center">
+                        <button type="submit" class="btn btn-outline-secondary" style="width: 90%;" id="like_button" name="like_button" value="{{ comment.id }}"><img class="me-2" width="32" src="
+                        {% if current_user.id|string() in comments_likers[comment.id] and current_user.is_authenticated %}
+                        /static/media/like_activated.svg
+                        {% else %}
+                        /static/media/like.svg
+                        {% endif %}"
+                        >{{ comment.likes }}</button>
+                    </div>
+                </div>
+            </form>
+            </div>
+            {% endfor %}
+            {% endif %}
         </div>
         <div class="pb-5"></div>
     {% endfor %}

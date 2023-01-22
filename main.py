@@ -165,7 +165,7 @@ def user_page(username):
             user_req = None
             user_friend = None
             the_user_is_friend = None
-        posts = db_sess.query(Post).filter(user.id == Post.poster_id)
+        posts = db_sess.query(Post).filter(user.id == Post.poster_id, Post.parent_post == None)
         posts_c = posts.count()
         if posts_c:
             max_page_of_user = posts_c // POSTS_IN_PAGE_MAX
@@ -195,6 +195,18 @@ def user_page(username):
                 post_likers[post.id] = post.who_liked.split(", ")
                 if "" in post_likers[post.id]:
                     post_likers[post.id].remove("")
+            comments = {}
+            comments_posters = {}
+            comments_time = {}
+            comments_likers = {}
+            for p in posts:
+                comments[p.id] = db_sess.query(Post).filter(Post.parent_post == p.id)
+                for comm in comments[p.id]:
+                    comments_posters[comm.id] = db_sess.query(User).filter(comm.poster_id == User.id).first()
+                    comments_time[comm.id] = make_readble_time(comm.creation_date)
+                    comments_likers[comm.id] = comm.who_liked.split(", ")
+                    if "" in comments_likers[comm.id]:
+                        comments_likers[comm.id].remove("")
             return render_template("user.html", user=user, current_user=current_user, posts=posts, posts_c=posts_c,
                                    media_pics=POST_MEDIA_PIC_TYPES, post_likers=post_likers,
                                    media_vid=POST_MEDIA_VID_TYPES, media_aud=POST_MEDIA_AUD_TYPES,
@@ -204,7 +216,9 @@ def user_page(username):
                                    post_media_count=post_media_count, user_req=user_req, user_friend=user_friend,
                                    the_user_is_friend=the_user_is_friend, last_n=last_n, last_n_time=last_n_time,
                                    last_n_text=make_text_news(last_n.text) if last_n else None, page=page,
-                                   page_max=POSTS_IN_PAGE_MAX, max_page_of_user=max_page_of_user)
+                                   page_max=POSTS_IN_PAGE_MAX, max_page_of_user=max_page_of_user,
+                                   comments=comments, comments_posters=comments_posters, comments_time=comments_time,
+                                   comments_likers=comments_likers)
         elif request.method == "POST":
             if "to_the_beginning_button" in request.form:
                 return redirect("/user/" + username + "?page=" + str(request.form["to_the_beginning_button"]))
@@ -271,6 +285,17 @@ def user_page(username):
                         else:
                             flash("Пост успешно отправлен", "success")
                         return redirect("/user/" + username + "?page=1")
+                    elif "comment_button" in request.form and not current_user.is_banned:
+                        if request.form.get("comment_text").replace(" ", ""):
+                            comment = Post()
+                            comment.poster_id = current_user.id
+                            comment.parent_post = request.form["comment_button"]
+                            comment.text = request.form["comment_text"]
+                            db_sess.add(comment)
+                            db_sess.commit()
+                            flash("Комментарий успешно отправлен", "success")
+                        else:
+                            flash("Сначала нужно что-нибудь написать", "danger")
                     elif "delete_post_button" in request.form and not current_user.is_banned:
                         post = db_sess.query(Post).filter(Post.id == request.form["delete_post_button"]).first()
                         if post.media:
@@ -318,6 +343,18 @@ def user_page(username):
                         user.is_news_publisher = True
                         db_sess.commit()
                         flash("Пользователю дана возможность публиковать новости", "success")
+                    elif "comment_button" in request.form and not user.posts_only_for_friends and \
+                            not current_user.is_banned and not user.is_banned:
+                        if request.form.get("comment_text").replace(" ", ""):
+                            comment = Post()
+                            comment.poster_id = current_user.id
+                            comment.parent_post = request.form["comment_button"]
+                            comment.text = request.form["comment_text"]
+                            db_sess.add(comment)
+                            db_sess.commit()
+                            flash("Комментарий успешно отправлен", "success")
+                        else:
+                            flash("Сначала нужно что-нибудь написать", "danger")
                     elif "friend_request_button" in request.form and not user_req and not user_friend:
                         user_friends_req = user.friends_req.split(", ")
                         if "" in user_friends_req:
