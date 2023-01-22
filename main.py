@@ -299,7 +299,7 @@ def user_page(username):
                     elif "delete_post_button" in request.form and not current_user.is_banned:
                         post = db_sess.query(Post).filter(Post.id == request.form["delete_post_button"]).first()
                         if post.media:
-                            files_to_delete = post.media.split(",")
+                            files_to_delete = post.media.split(", ")
                             for f in files_to_delete:
                                 if os.path.isfile("static/media/from_users/" + f):
                                     os.remove("static/media/from_users/" + f)
@@ -329,7 +329,7 @@ def user_page(username):
                         post = db_sess.query(Post).filter(Post.id == request.form["delete_post_button"]).first()
                         if post.poster_id == current_user.id or current_user.is_admin:
                             if post.media:
-                                files_to_delete = post.media.split(",")
+                                files_to_delete = post.media.split(", ")
                                 for f in files_to_delete:
                                     if os.path.isfile("static/media/from_users/" + f):
                                         os.remove("static/media/from_users/" + f)
@@ -706,7 +706,7 @@ def news_page():
                 current_user.is_authenticated and "delete_n_button" in request.form:
             n = db_sess.query(News).filter(News.id == request.form["delete_n_button"]).first()
             if n.media:
-                files_to_delete = n.media.split(",")
+                files_to_delete = n.media.split(", ")
                 for f in files_to_delete:
                     if os.path.isfile("static/media/from_users/" + f):
                         os.remove("static/media/from_users/" + f)
