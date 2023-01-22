@@ -236,19 +236,27 @@
                     <p style="white-space: pre-wrap; padding: 0 3%;" class="pb-1">{{ comment.text }}</p>
                 {% endif %}
                 <form method="post" class="row">
-                <div class="col">
-                    <div class="text-center">
-                        <button type="submit" class="btn btn-outline-secondary" style="width: 90%;" id="like_button" name="like_button" value="{{ comment.id }}"><img class="me-2" width="32" src="
-                        {% if current_user.id|string() in comments_likers[comment.id] and current_user.is_authenticated %}
-                        /static/media/like_activated.svg
-                        {% else %}
-                        /static/media/like.svg
-                        {% endif %}"
-                        >{{ comment.likes }}</button>
+                    <div class="col">
+                        <div class="text-center">
+                            <button type="submit" class="btn btn-outline-secondary" style="width: 90%;" id="like_button" name="like_button" value="{{ comment.id }}"><img class="me-2" width="32" src="
+                            {% if current_user.id|string() in comments_likers[comment.id] and current_user.is_authenticated %}
+                            /static/media/like_activated.svg
+                            {% else %}
+                            /static/media/like.svg
+                            {% endif %}"
+                            >{{ comment.likes }}</button>
+                        </div>
                     </div>
-                </div>
+                    {% if current_user == comments_posters[comment.id] or (current_user.is_admin and not comments_posters[comment.id].is_admin) or (current_user == user and not comments_posters[comment.id].is_admin) %}
+                    <div class="col">
+                        <div class="text-center">
+                            <button type="submit" class="btn btn-danger" style="width: 90%;" id="delete_post_button" name="delete_post_button" value="{{ comment.id }}">Удалить пост</button>
+                        </div>
+                    </div>
+                    {% endif %}
             </form>
             </div>
+            <div class="pb-2"></div>
             {% endfor %}
             {% endif %}
         </div>

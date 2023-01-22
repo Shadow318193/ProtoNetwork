@@ -325,16 +325,19 @@ def user_page(username):
                         user.is_banned = False
                         db_sess.commit()
                         flash("Пользователь успешно разбанен", "success")
-                    elif "delete_post_button" in request.form and not current_user.is_banned and current_user.is_admin:
+                    elif "delete_post_button" in request.form and not current_user.is_banned:
                         post = db_sess.query(Post).filter(Post.id == request.form["delete_post_button"]).first()
-                        if post.media:
-                            files_to_delete = post.media.split(",")
-                            for f in files_to_delete:
-                                if os.path.isfile("static/media/from_users/" + f):
-                                    os.remove("static/media/from_users/" + f)
-                        db_sess.delete(post)
-                        db_sess.commit()
-                        flash("Пост успешно удалён", "success")
+                        if post.poster_id == current_user.id or current_user.is_admin:
+                            if post.media:
+                                files_to_delete = post.media.split(",")
+                                for f in files_to_delete:
+                                    if os.path.isfile("static/media/from_users/" + f):
+                                        os.remove("static/media/from_users/" + f)
+                            db_sess.delete(post)
+                            db_sess.commit()
+                            flash("Пост успешно удалён", "success")
+                        else:
+                            flash("Нельзя удалить этот пост", "danger")
                     elif "unmake_user_news_pub_button" in request.form and current_user.is_news_publisher and not user.is_banned:
                         user.is_news_publisher = False
                         db_sess.commit()
