@@ -74,6 +74,8 @@ def load_user(user_id: int):
 
 
 def name_is_correct(name_s: str):
+    if not name_s:
+        return False
     if not name_s.replace(" ", "") or len(name_s) > 32:
         return False
     for i in name_s.lower():
@@ -83,6 +85,8 @@ def name_is_correct(name_s: str):
 
 
 def login_is_correct(login_s: str):
+    if not login_s:
+        return False
     if not login_s.replace(" ", "") or len(login_s) > 32:
         return False
     for i in login_s.lower():
@@ -423,28 +427,32 @@ def settings():
         return render_template("settings.html", current_user=current_user, accept_avatars=accept_avatars)
     elif request.method == "POST":
         db_sess = db_session.create_session()
+        user = db_sess.query(User).filter(User.id == current_user.id).first()
         if not current_user.is_banned:
-            user = db_sess.query(User).filter(User.id == current_user.id).first()
             if "clear_button" in request.form and user.avatar:
                 if os.path.isfile("static/media/from_users/avatars/" + user.avatar):
                     os.remove("static/media/from_users/avatars/" + user.avatar)
                 user.avatar = None
                 db_sess.commit()
             elif "set_button" in request.form:
-                if request.form.get("name"):
+                if name_is_correct(request.form.get("name")):
                     user.name = request.form["name"]
-                if request.form.get("surname"):
+                if name_is_correct(request.form.get("surname")):
                     user.surname = request.form["surname"]
-                if request.form.get("login"):
+                if login_is_correct(request.form.get("login")):
                     existing_user = db_sess.query(User).filter(User.login == request.form["login"]).first()
                     if existing_user:
                         flash("Ошибка обновления: кто-то уже есть с таким логином", "danger")
                         return redirect("/user/" + current_user.login)
+                    else:
+                        user.login = request.form["login"]
                 if request.form.get("email"):
                     existing_user = db_sess.query(User).filter(User.email == request.form["email"]).first()
                     if existing_user:
                         flash("Ошибка обновления: кто-то уже есть с такой почтой", "danger")
                         return redirect("/user/" + current_user.login)
+                    else:
+                        user.email = request.form["email"]
                 if request.form.get("only_friends"):
                     user.posts_only_for_friends = True
                 else:
@@ -465,7 +473,7 @@ def settings():
             flash("Настройки обновлены", "success")
         else:
             flash("Нельзя настраивать забаненный аккаунт", "danger")
-        return redirect("/user/" + current_user.login)
+        return redirect("/user/" + user.login)
 
 
 @app.route("/friends", methods=["POST", "GET"])
