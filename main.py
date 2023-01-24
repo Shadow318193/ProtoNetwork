@@ -76,7 +76,7 @@ def load_user(user_id: int):
 def name_is_correct(name_s: str):
     if not name_s:
         return False
-    if not name_s.replace(" ", "") or len(name_s) > 32:
+    if not name_s.split() or len(name_s) > 32:
         return False
     for i in name_s.lower():
         if i not in "абвгдеёжзийклмнопрстуфхцчшщъыьэюя":
@@ -87,7 +87,7 @@ def name_is_correct(name_s: str):
 def login_is_correct(login_s: str):
     if not login_s:
         return False
-    if not login_s.replace(" ", "") or len(login_s) > 32:
+    if not login_s.split() or len(login_s) > 32:
         return False
     for i in login_s.lower():
         if i not in "abcdefghijklmnopqrstuvwxyz0123456789_":
