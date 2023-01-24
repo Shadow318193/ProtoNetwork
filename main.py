@@ -16,14 +16,15 @@ from time import time
 
 from platform import release
 
-is_xp = True if release() == "XP" else False  # Для корректной работы на моём нетбуке с Windows XP :)
+PYTHONANYWHERE = False
+is_xp = True if release() == "XP" and not PYTHONANYWHERE else False
 
 AVATAR_TYPES = ["png", "jpg", "jpeg", "gif"]
 POST_MEDIA_PIC_TYPES = ["png", "jpg", "jpeg", "gif"]
 POST_MEDIA_VID_TYPES = ["webm", "mp4"]
 POST_MEDIA_AUD_TYPES = ["mp3", "wav"]
 POST_MEDIA_TYPES = POST_MEDIA_VID_TYPES + POST_MEDIA_PIC_TYPES + POST_MEDIA_AUD_TYPES
-MAX_MEDIA_COUNT = 8
+MAX_MEDIA_COUNT = 8 if not PYTHONANYWHERE else 5
 POSTS_IN_PAGE_MAX = 10
 
 PICS_404 = ["masha.png", "johnny.gif"]
@@ -41,6 +42,7 @@ def make_accept_for_html(mime: str):
 
 
 def make_readble_time(t: datetime.datetime):
+    # Time format: dd.MM.yyyy hh:mm
     new_t = str(t).split()
     new_t[0] = new_t[0].split("-")[::-1]
     new_t[0] = ".".join(new_t[0])
@@ -129,7 +131,7 @@ def allowed_type(filename, types):
 
 app.config['SECRET_KEY'] = 'secret_key'
 app.config['UPLOAD_FOLDER'] = 'static/media/from_users'
-app.config['MAX_CONTENT_LENGTH'] = 128 * 1024 * 1024
+app.config['MAX_CONTENT_LENGTH'] = 128 * 1024 * 1024 if not PYTHONANYWHERE else 16 * 1024 * 1024
 
 
 @app.route("/", methods=["GET"])
@@ -771,14 +773,17 @@ def e500(code):
                            " исправляем её", pics=PICS_500)
 
 
-if __name__ == "__main__":
+if not PYTHONANYWHERE:
+    if __name__ == "__main__":
+        db_session.global_init("db/social_network.db")
+        if is_xp:
+            import socket
+            s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+            s.connect(("8.8.8.8", 80))
+            host = s.getsockname()[0]
+            s.close()
+            app.run(host=host, port=8080)
+        else:
+            app.run(host="0.0.0.0", port=8080)
+else:
     db_session.global_init("db/social_network.db")
-    if is_xp:
-        import socket
-        s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-        s.connect(("8.8.8.8", 80))
-        host = s.getsockname()[0]
-        s.close()
-        app.run(host=host, port=8080)
-    else:
-        app.run(host="0.0.0.0", port=8080)
