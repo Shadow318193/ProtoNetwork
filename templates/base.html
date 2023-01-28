@@ -41,7 +41,7 @@
     </div>
     </header>
     {% for cat, msg in get_flashed_messages(True) %}
-    <div class="alert alert-{{ cat }} text-center">{{ msg }}</div>
+    <div class="alert alert-{{ cat }} text-center" style="white-space: pre-wrap;">{{ msg }}</div>
     {% endfor %}
 
 {% endblock %}

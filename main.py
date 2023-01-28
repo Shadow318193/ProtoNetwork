@@ -1,3 +1,5 @@
+import random
+
 from flask import Flask, request, render_template, redirect, abort, flash
 from flask_login import LoginManager, login_user, logout_user, login_required, current_user
 
@@ -431,6 +433,8 @@ def settings():
         db_sess = db_session.create_session()
         user = db_sess.query(User).filter(User.id == current_user.id).first()
         if not current_user.is_banned:
+            all_is_ok = True
+            error_message = "Настройки обновлены частично, случились проблемы с:"
             if "clear_button" in request.form and user.avatar:
                 if os.path.isfile("static/media/from_users/avatars/" + user.avatar):
                     os.remove("static/media/from_users/avatars/" + user.avatar)
@@ -439,22 +443,41 @@ def settings():
             elif "set_button" in request.form:
                 if name_is_correct(request.form.get("name")):
                     user.name = request.form["name"]
+                elif request.form.get("name") != "" and request.form.get("name") != None:
+                    error_message += "\nИменем"
+                    all_is_ok = False
                 if name_is_correct(request.form.get("surname")):
                     user.surname = request.form["surname"]
+                elif request.form.get("surname") != "" and request.form.get("surname") != None:
+                    error_message += "\nФамилией"
+                    all_is_ok = False
                 if login_is_correct(request.form.get("login")):
                     existing_user = db_sess.query(User).filter(User.login == request.form["login"]).first()
                     if existing_user:
-                        flash("Ошибка обновления: кто-то уже есть с таким логином", "danger")
-                        return redirect("/user/" + current_user.login)
+                        error_message += "\nЛогином (он уже есть на сайте)"
+                        all_is_ok = False
                     else:
                         user.login = request.form["login"]
+                elif request.form.get("login") != "" and request.form.get("login") != None:
+                    error_message += "\nЛогином"
                 if request.form.get("email"):
                     existing_user = db_sess.query(User).filter(User.email == request.form["email"]).first()
                     if existing_user:
-                        flash("Ошибка обновления: кто-то уже есть с такой почтой", "danger")
-                        return redirect("/user/" + current_user.login)
+                        error_message += "\nПочтой (она уже есть на сайте)"
+                        all_is_ok = False
                     else:
                         user.email = request.form["email"]
+                elif request.form.get("email") != "" and request.form.get("email") != None:
+                    error_message += "\nПочтой"
+                if request.form.get("old_password") and request.form.get("new_password") and \
+                        request.form.get("confirm_new_password"):
+                    if request.form["new_password"] == request.form["confirm_new_password"] and \
+                            check_password_hash(user.hashed_password, request.form["old_password"]) and \
+                            password_is_correct(request.form["new_password"]):
+                        user.hashed_password = generate_password_hash(request.form["new_password"])
+                    else:
+                        all_is_ok = False
+                        error_message += "\nПаролем"
                 if request.form.get("only_friends"):
                     user.posts_only_for_friends = True
                 else:
@@ -471,8 +494,13 @@ def settings():
                     filename = "avatar" + str(user.id) + "." + file.filename.rsplit('.', 1)[1].lower()
                     file.save(os.path.join(app.config['UPLOAD_FOLDER'] + "/avatars", filename))
                     user.avatar = filename
+                elif file and not allowed_type(file.filename, AVATAR_TYPES):
+                    error_message += "\nАватаркой"
                 db_sess.commit()
-            flash("Настройки обновлены", "success")
+            if all_is_ok:
+                flash("Настройки обновлены", "success")
+            else:
+                flash(error_message, "warning")
         else:
             flash("Нельзя настраивать забаненный аккаунт", "danger")
         return redirect("/user/" + user.login)
@@ -675,7 +703,8 @@ def news_page():
                 n_media_count[n.id] = len(n.media.split(", "))
         return render_template("news.html", current_user=current_user, news=news, n_time=n_time, n_media=n_media,
                                n_media_type=n_media_type, n_media_count=n_media_count, media_pics=POST_MEDIA_PIC_TYPES,
-                               media_vid=POST_MEDIA_VID_TYPES, media_aud=POST_MEDIA_AUD_TYPES)
+                               media_vid=POST_MEDIA_VID_TYPES, media_aud=POST_MEDIA_AUD_TYPES,
+                               max_size=app.config['MAX_CONTENT_LENGTH'] // 1024 // 1024, max_count=MAX_MEDIA_COUNT)
     elif request.method == "POST":
         if (current_user.is_admin or current_user.is_news_publisher) and not current_user.is_banned and \
                 current_user.is_authenticated and "post_button" in request.form:
@@ -736,6 +765,14 @@ def logout():
     if request.args.get("from"):
         return redirect(request.args.get("from"))
     return redirect("/")
+
+
+@app.route("/random")
+def go_to_random_user():
+    update_user_auth_time()
+    db_sess = db_session.create_session()
+    user = random.choice(list(db_sess.query(User)))
+    return redirect("/user/" + user.login)
 
 
 @app.errorhandler(401)
