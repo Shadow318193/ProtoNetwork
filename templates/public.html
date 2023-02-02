@@ -58,7 +58,7 @@
         <div class="col">
             <p>Создано: <i>{{ public_creation_time }}</i></p>
             <p>Подписчиков: {{ public.subscribers }}</p>
-            {% if current_user.is_authenticated and not current_user.is_banned and admin_tools %}
+            {% if current_user.is_authenticated and not current_user.is_banned and (admin_tools or moderator_tools) %}
                 <h3>О сообществе:</h3>
                 <form method="post">
                     <div class="row pb-3">
