@@ -1111,7 +1111,7 @@ def public_list_page():
                                publics_admin_or_mod_c=len(publics_admin_or_mod)
                                if current_user.is_authenticated else None)
     elif request.method == "POST":
-        if "create_public_button" in request.form and request.form.get("name"):
+        if "create_public_button" in request.form and request.form.get("name") and not current_user.is_banned:
             public_id = db_sess.query(Public).count() + 1
             public = Public()
             public.admins = str(current_user.id)
@@ -1119,6 +1119,7 @@ def public_list_page():
             public.about = request.form["about"] if request.form.get("about") else ""
             db_sess.add(public)
             db_sess.commit()
+            flash("Сообщество создано", "success")
             return redirect("/public/" + str(public_id))
         return redirect("/public")
 
