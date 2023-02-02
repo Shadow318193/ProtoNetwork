@@ -1,1 +1,1 @@
-from . import user, post, news
+from . import user, post, news, public
