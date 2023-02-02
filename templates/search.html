@@ -17,9 +17,10 @@
             <input id="text_to_search" name="text_to_search" type="search" class="form-control" placeholder="Имя, название и т. д.">
         </div>
     </form>
+    <h3 class="text-center pb-3">Люди</h3>
     {% if users_c %}
         {% if text_to_search %}
-        <h3 class="pb-3">Найдено совпадений: {{ users_c }}</h3>
+        <h3 class="pb-3">Найдено совпадений (пользователи): {{ users_c }}</h3>
         {% endif %}
         <div class="row pb-3">
             <div class="card p-3" style="overflow: auto; display: flex; flex-direction: row;">
@@ -60,9 +61,44 @@
         </div>
     {% else %}
         {% if text_to_search %}
-        <h3 class="pb-3 text-center">Сходств не найдено</h3>
+        <h4 class="pb-3 text-center">Сходств среди пользователей не найдено</h4>
         {% else %}
-        <h3 class="pb-3 text-center">Других пользователей пока что нет</h3>
+        <h4 class="pb-3 text-center">Других пользователей пока что нет</h4>
+        {% endif %}
+    {% endif %}
+    <div class="pb-5"></div>
+    <h3 class="text-center pb-3">Группы</h3>
+    {% if publics_c %}
+        {% if text_to_search %}
+        <h3 class="pb-3">Найдено совпадений (группы): {{ publics_c }}</h3>
+        {% endif %}
+        <div class="row pb-3">
+            <div class="card p-3" style="overflow: auto; display: flex; flex-direction: row;">
+        {% for public in publics %}
+                    <div class="card" style="width: 18rem;">
+                    {% if public.avatar == None and not public.is_banned %}
+                    <img src="/static/media/default.png" width="256" height="256" style="margin: 0 auto;" class="img-thumbnail mt-3" alt="{{ public.name }}">
+                    {% elif public.is_banned %}
+                    <img src="/static/media/ban.jpg" width="256" height="256" style="margin: 0 auto;" class="img-thumbnail mt-3" alt="{{ public.name }}">
+                    {% else %}
+                    <img src="/static/media/from_users/avatars/{{ public.avatar }}" style="object-fit: cover; width: 256px; height: 256px; margin: 0 auto;" class="img-thumbnail mt-3" alt="{{ public.name }}">
+                    {% endif %}
+                        <div class="card-body">
+                            <h5 class="card-title text-center">{{ public.name }}</h5>
+                            <p class="card-text text-center">Сообщество</p>
+                            <div class="text-center mt-3">
+                                <a href="/public/{{ public.id }}" class="btn btn-primary">Перейти</a>
+                            </div>
+                        </div>
+                    </div>
+        {% endfor %}
+            </div>
+        </div>
+    {% else %}
+        {% if text_to_search %}
+        <h4 class="pb-3 text-center">Сходств среди групп не найдено</h4>
+        {% else %}
+        <h4 class="pb-3 text-center">Групп пока что нет</h4>
         {% endif %}
     {% endif %}
 {% endblock %}

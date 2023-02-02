@@ -9,6 +9,7 @@ from data import db_session
 from data.user import User
 from data.post import Post
 from data.news import News
+from data.public import Public
 
 import datetime
 
@@ -173,7 +174,7 @@ def user_page(username):
             user_req = None
             user_friend = None
             the_user_is_friend = None
-        posts = db_sess.query(Post).filter(user.id == Post.poster_id, Post.parent_post == None)
+        posts = db_sess.query(Post).filter(user.id == Post.poster_id, Post.parent_post == None, Post.public_id == None)
         posts_c = posts.count()
         if posts_c:
             max_page_of_user = posts_c // POSTS_IN_PAGE_MAX
@@ -496,6 +497,7 @@ def settings():
                     user.avatar = filename
                 elif file and not allowed_type(file.filename, AVATAR_TYPES):
                     error_message += "\nАватаркой"
+                    all_is_ok = False
                 db_sess.commit()
             if all_is_ok:
                 flash("Настройки обновлены", "success")
@@ -662,7 +664,9 @@ def search():
             users = db_sess.query(User).filter(User.id != current_user.id)
         else:
             users = db_sess.query(User)
+        publics = db_sess.query(Public)
         needed_users = []
+        needed_publics = []
         if text_to_search:
             text_to_search = [x.lower() for x in text_to_search.split("+")]
             for user in users:
@@ -674,13 +678,20 @@ def search():
                     else:
                         if t in user.name.lower() or t in user.surname.lower() or t in user.login.lower():
                             needed_users.append(user)
+            for public in publics:
+                for t in text_to_search:
+                    if t in public.name.lower():
+                        needed_publics.append(public)
             users_c = len(needed_users)
+            publics_c = len(needed_publics)
         else:
             users_c = users.count()
+            publics_c = publics.count()
         return render_template("search.html", current_user=current_user, text_to_search=text_to_search,
                                users=needed_users if text_to_search else users, users_c=users_c,
-                               last_n=last_n, last_n_time=last_n_time,
-                               last_n_text=make_text_news(last_n.text) if last_n else None)
+                               last_n=last_n, last_n_time=last_n_time, publics_c=publics_c,
+                               last_n_text=make_text_news(last_n.text) if last_n else None,
+                               publics=needed_publics if text_to_search else publics)
     elif request.method == "POST":
         return redirect("/search?req=" + request.form.get("text_to_search").replace(" ", "+"))
 
@@ -755,6 +766,359 @@ def news_page():
         else:
             flash("Нехорошо рыться в HTML для деструктивных действий", "danger")
         return redirect("/news")
+
+
+@app.route("/public/<public_id>", methods=["POST", "GET"])
+def public_page(public_id):
+    update_user_auth_time()
+    db_sess = db_session.create_session()
+    public = db_sess.query(Public).filter(Public.id == public_id).first()
+    if public:
+        if not request.args.get("page"):
+            return redirect("/public/" + public_id + "?page=1")
+        else:
+            try:
+                page = int(request.args["page"])
+                if page < 1:
+                    return redirect("/public/" + public_id + "?page=1")
+            except ValueError:
+                return redirect("/public/" + public_id + "?page=1")
+        public_admins = public.admins.split(", ")
+        if "" in public_admins:
+            public_admins.remove("")
+        if current_user.is_authenticated:
+            if str(current_user.id) in public_admins:
+                admin_tools = True
+            else:
+                admin_tools = False
+        else:
+            admin_tools = False
+        public_moderators = public.moderators.split(", ")
+        if "" in public_moderators:
+            public_moderators.remove("")
+        if current_user.is_authenticated:
+            if str(current_user.id) in public_moderators:
+                moderator_tools = True
+            else:
+                moderator_tools = False
+        else:
+            moderator_tools = False
+        subscribers = public.who_subscribed.split(", ")
+        if "" in subscribers:
+            subscribers.remove("")
+        if current_user.is_authenticated:
+            if str(current_user.id) in subscribers:
+                is_subscriber = True
+            else:
+                is_subscriber = False
+        else:
+            is_subscriber = False
+        posts = db_sess.query(Post).filter(public.id == Post.public_id, Post.parent_post == None)
+        posts_c = posts.count()
+        if posts_c:
+            max_page_of_public = posts_c // POSTS_IN_PAGE_MAX
+            if posts_c % POSTS_IN_PAGE_MAX:
+                max_page_of_public += 1
+        else:
+            max_page_of_public = 1
+        if page > max_page_of_public and page != 1:
+            return redirect("/public/" + public + "?page=" + str(max_page_of_public))
+        if request.method == "GET":
+            last_n = db_sess.query(News).get(db_sess.query(News).count())
+            if last_n:
+                last_n_time = make_readble_time(last_n.creation_date)
+            else:
+                last_n_time = None
+            post_time = {}
+            post_media = {}
+            post_media_type = {}
+            post_media_count = {}
+            post_likers = {}
+            for post in posts:
+                post_time[post.id] = make_readble_time(post.creation_date)
+                if post.media:
+                    post_media[post.id] = post.media.split(", ")
+                    post_media_type[post.id] = post.media_type.split(", ")
+                    post_media_count[post.id] = len(post.media.split(", "))
+                post_likers[post.id] = post.who_liked.split(", ")
+                if "" in post_likers[post.id]:
+                    post_likers[post.id].remove("")
+            comments = {}
+            comments_posters = {}
+            comments_time = {}
+            comments_likers = {}
+            for p in posts:
+                comments[p.id] = db_sess.query(Post).filter(Post.parent_post == p.id)
+                for comm in comments[p.id]:
+                    comments_posters[comm.id] = db_sess.query(User).filter(comm.poster_id == User.id).first()
+                    comments_time[comm.id] = make_readble_time(comm.creation_date)
+                    comments_likers[comm.id] = comm.who_liked.split(", ")
+                    if "" in comments_likers[comm.id]:
+                        comments_likers[comm.id].remove("")
+            return render_template("public.html", current_user=current_user, last_n=last_n, last_n_time=last_n_time,
+                                   last_n_text=make_text_news(last_n.text) if last_n else None, public=public,
+                                   admin_tools=admin_tools, page=page, max_page_of_public=max_page_of_public,
+                                   posts=posts, posts_c=posts_c, media_pics=POST_MEDIA_PIC_TYPES,
+                                   post_likers=post_likers, media_vid=POST_MEDIA_VID_TYPES,
+                                   media_aud=POST_MEDIA_AUD_TYPES, accept_files=accept_post_media,
+                                   post_time=post_time, max_size=app.config['MAX_CONTENT_LENGTH'] // 1024 // 1024,
+                                   max_count=MAX_MEDIA_COUNT, post_media=post_media, post_media_type=post_media_type,
+                                   post_media_count=post_media_count, comments=comments, page_max=POSTS_IN_PAGE_MAX,
+                                   comments_posters=comments_posters, comments_time=comments_time,
+                                   comments_likers=comments_likers, is_subscriber=is_subscriber,
+                                   moderator_tools=moderator_tools)
+        elif request.method == "POST":
+            if "to_the_beginning_button" in request.form:
+                return redirect("/public/" + public_id + "?page=" + str(request.form["to_the_beginning_button"]))
+            elif "to_the_end_button" in request.form:
+                return redirect("/public/" + public_id + "?page=" + str(request.form["to_the_end_button"]))
+            elif "to_the_previous_button" in request.form:
+                return redirect("/public/" + public_id + "?page=" + str(request.form["to_the_previous_button"]))
+            elif "to_the_next_button" in request.form:
+                return redirect("/public/" + public_id + "?page=" + str(request.form["to_the_next_button"]))
+            if current_user.is_authenticated:
+                if "like_button" in request.form:
+                    post = db_sess.query(Post).filter(Post.id == request.form["like_button"]).first()
+                    if post:
+                        who_liked = post.who_liked.split(", ")
+                        if "" in who_liked:
+                            who_liked.remove("")
+                        if str(current_user.id) in who_liked:
+                            who_liked.remove(str(current_user.id))
+                            post.likes -= 1
+                            msg = "Лайк убран"
+                        else:
+                            who_liked.append(str(current_user.id))
+                            post.likes += 1
+                            msg = "Лайк поставлен"
+                        post.who_liked = ", ".join(who_liked)
+                        db_sess.commit()
+                        flash(msg, "success")
+                    return redirect("/public/" + public_id + "?page=" + str(page))
+                elif "subscribe_button" in request.form:
+                    who_subscribed = public.who_subscribed.split(", ")
+                    if "" in who_subscribed:
+                        who_subscribed.remove("")
+                    if str(current_user.id) in who_subscribed:
+                        who_subscribed.remove(str(current_user.id))
+                        public.subscribers -= 1
+                        msg = "Подписка отменена"
+                    else:
+                        who_subscribed.append(str(current_user.id))
+                        public.subscribers += 1
+                        msg = "Ты подписался"
+                    public.who_subscribed = ", ".join(who_subscribed)
+                    db_sess.commit()
+                    flash(msg, "success")
+                if admin_tools or moderator_tools:
+                    if "about_button" in request.form and not current_user.is_banned and not public.is_banned:
+                        public.about = request.form["about_input"]
+                        db_sess.commit()
+                        flash("Описание успешно обновлено", "success")
+                    elif "post_button" in request.form and not current_user.is_banned and not public.is_banned:
+                        post = Post()
+                        files = request.files.getlist("files[]")
+                        too_many_files = False
+                        if files:
+                            media = []
+                            media_type = []
+                            f_count = 0
+                            for file in files:
+                                if allowed_type(file.filename, POST_MEDIA_TYPES) and f_count < MAX_MEDIA_COUNT:
+                                    filename = str(time()).replace(".", "_") + "_" + str(f_count) + "." + \
+                                               file.filename.rsplit('.', 1)[1].lower()
+                                    file.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
+                                    media.append(filename)
+                                    media_type.append(filename.rsplit('.', 1)[1].lower())
+                                    f_count += 1
+                                elif f_count >= MAX_MEDIA_COUNT:
+                                    too_many_files = True
+                                    break
+                            if media:
+                                post.media = ", ".join(media)
+                            if media_type:
+                                post.media_type = ", ".join(media_type)
+                        post.poster_id = current_user.id
+                        post.public_id = public.id
+                        post.text = request.form["text"]
+                        db_sess.add(post)
+                        db_sess.commit()
+                        if too_many_files:
+                            flash("Пост отправлен, но был превышен лимит файлов на один пост, поэтому"
+                                  " часть из них была отброшена", "warning")
+                        else:
+                            flash("Пост успешно отправлен", "success")
+                        return redirect("/public/" + public_id + "?page=1")
+                    elif "comment_button" in request.form and not current_user.is_banned:
+                        if request.form.get("comment_text").replace(" ", ""):
+                            comment = Post()
+                            comment.poster_id = current_user.id
+                            comment.parent_post = request.form["comment_button"]
+                            comment.text = request.form["comment_text"]
+                            db_sess.add(comment)
+                            db_sess.commit()
+                            flash("Комментарий успешно отправлен", "success")
+                        else:
+                            flash("Сначала нужно что-нибудь написать", "danger")
+                    elif "delete_post_button" in request.form and not current_user.is_banned and not public.is_banned:
+                        post = db_sess.query(Post).filter(Post.id == request.form["delete_post_button"]).first()
+                        if post.media:
+                            files_to_delete = post.media.split(", ")
+                            for f in files_to_delete:
+                                if os.path.isfile("static/media/from_users/" + f):
+                                    os.remove("static/media/from_users/" + f)
+                        db_sess.delete(post)
+                        db_sess.commit()
+                        flash("Пост успешно удалён", "success")
+                    elif current_user.is_banned:
+                        flash("Ты был забанен, поэтому отправлять с этого аккаунта больше ничего нельзя, "
+                              "только смотреть. Причина бана: " + current_user.ban_reason, "danger")
+                    elif public.is_banned:
+                        flash("Это сообщество было забанено, поэтому отправлять с него больше ничего нельзя. "
+                              "Причина бана: " + current_user.ban_reason, "danger")
+                else:
+                    if "ban_public_button" in request.form and current_user.is_admin and not public.is_banned:
+                        if request.form.get("reason_text"):
+                            public.ban_reason = request.form["reason_text"]
+                            public.is_banned = True
+                            db_sess.commit()
+                            flash("Пользователь успешно забанен", "success")
+                        else:
+                            flash("Необходимо указать причину бана", "danger")
+                    elif "unban_public_button" in request.form and current_user.is_admin and public.is_banned:
+                        public.ban_reason = None
+                        public.is_banned = False
+                        db_sess.commit()
+                        flash("Пользователь успешно разбанен", "success")
+                    elif "delete_post_button" in request.form and not current_user.is_banned:
+                        post = db_sess.query(Post).filter(Post.id == request.form["delete_post_button"]).first()
+                        if post.poster_id == current_user.id or current_user.is_admin:
+                            if post.media:
+                                files_to_delete = post.media.split(", ")
+                                for f in files_to_delete:
+                                    if os.path.isfile("static/media/from_users/" + f):
+                                        os.remove("static/media/from_users/" + f)
+                            db_sess.delete(post)
+                            db_sess.commit()
+                            flash("Пост успешно удалён", "success")
+                        else:
+                            flash("Нельзя удалить этот пост", "danger")
+                    elif "comment_button" in request.form and not current_user.is_banned and not public.is_banned:
+                        if request.form.get("comment_text").replace(" ", ""):
+                            comment = Post()
+                            comment.poster_id = current_user.id
+                            comment.parent_post = request.form["comment_button"]
+                            comment.text = request.form["comment_text"]
+                            db_sess.add(comment)
+                            db_sess.commit()
+                            flash("Комментарий успешно отправлен", "success")
+                        else:
+                            flash("Сначала нужно что-нибудь написать", "danger")
+            return redirect("/public/" + public_id)
+    else:
+        abort(404)
+
+
+@app.route("/public/<public_id>/settings", methods=["POST", "GET"])
+@login_required
+def public_settings(public_id):
+    update_user_auth_time()
+    db_sess = db_session.create_session()
+    public = db_sess.query(Public).filter(Public.id == public_id).first()
+    if public:
+        public_admins = public.admins.split(", ")
+        if "" in public_admins:
+            public_admins.remove("")
+        if not str(current_user.id) in public_admins:
+            abort(403)
+        if request.method == "GET":
+            if current_user.is_banned:
+                flash("Тебе нельзя настраивать сообщество, так как ты забанен", "danger")
+                return redirect("/public/" + public_id)
+            elif public.is_banned:
+                flash("Нельзя настраивать забаненное сообщество", "danger")
+                return redirect("/public/" + public_id)
+            return render_template("public_settings.html", current_user=current_user, accept_avatars=accept_avatars,
+                                   public=public)
+        elif request.method == "POST":
+            if not current_user.is_banned and not public.is_banned:
+                all_is_ok = True
+                error_message = "Настройки обновлены частично, случились проблемы с:"
+                if "clear_button" in request.form and public.avatar:
+                    if os.path.isfile("static/media/from_users/avatars/" + public.avatar):
+                        os.remove("static/media/from_users/avatars/" + public.avatar)
+                    public.avatar = None
+                    db_sess.commit()
+                elif "set_button" in request.form:
+                    if name_is_correct(request.form.get("name")):
+                        public.name = request.form["name"]
+                    elif request.form.get("name") != "" and request.form.get("name") != None:
+                        error_message += "\nНазванием"
+                        all_is_ok = False
+                    file = request.files["file"]
+                    if file and allowed_type(file.filename, AVATAR_TYPES):
+                        if public.avatar != None:
+                            if os.path.isfile("static/media/from_users/avatars/" + public.avatar):
+                                os.remove("static/media/from_users/avatars/" + public.avatar)
+                        filename = "public_avatar" + str(public.id) + "." + file.filename.rsplit('.', 1)[1].lower()
+                        file.save(os.path.join(app.config['UPLOAD_FOLDER'] + "/avatars", filename))
+                        public.avatar = filename
+                    elif file and not allowed_type(file.filename, AVATAR_TYPES):
+                        error_message += "\nАватаркой"
+                        all_is_ok = False
+                    db_sess.commit()
+                if all_is_ok:
+                    flash("Настройки обновлены", "success")
+                else:
+                    flash(error_message, "warning")
+            else:
+                flash("Нельзя настраивать забаненный аккаунт", "danger")
+            return redirect("/public/" + public_id)
+    else:
+        abort(404)
+
+
+@app.route("/public", methods=["POST", "GET"])
+def public_list_page():
+    update_user_auth_time()
+    db_sess = db_session.create_session()
+    if request.method == "GET":
+        publics = db_sess.query(Public)
+        if current_user.is_authenticated:
+            publics_subscribed = []
+            publics_admin_or_mod = []
+            for public in publics:
+                subscrbers = public.who_subscribed.split(", ")
+                admin = public.admins.split(", ")
+                mod = public.moderators.split(", ")
+                if str(current_user.id) in subscrbers:
+                    publics_subscribed.append(public)
+                if str(current_user.id) in admin or str(current_user.id) in mod:
+                    publics_admin_or_mod.append(public)
+        last_n = db_sess.query(News).get(db_sess.query(News).count())
+        if last_n:
+            last_n_time = make_readble_time(last_n.creation_date)
+        else:
+            last_n_time = None
+        return render_template("public_list.html", current_user=current_user, last_n=last_n, last_n_time=last_n_time,
+                               last_n_text=make_text_news(last_n.text) if last_n else None, publics=publics,
+                               publics_c=publics.count(),
+                               publics_subscribed=publics_subscribed if current_user.is_authenticated else None,
+                               publics_subscribed_c=len(publics_subscribed) if current_user.is_authenticated else None,
+                               publics_admin_or_mod=publics_admin_or_mod if current_user.is_authenticated else None,
+                               publics_admin_or_mod_c=len(publics_admin_or_mod)
+                               if current_user.is_authenticated else None)
+    elif request.method == "POST":
+        if "create_public_button" in request.form and request.form.get("name"):
+            public_id = db_sess.query(Public).count() + 1
+            public = Public()
+            public.admins = str(current_user.id)
+            public.name = request.form["name"]
+            public.about = request.form["about"] if request.form.get("about") else ""
+            db_sess.add(public)
+            db_sess.commit()
+            return redirect("/public/" + str(public_id))
+        return redirect("/public")
 
 
 @app.route("/logout")

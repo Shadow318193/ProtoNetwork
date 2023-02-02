@@ -10,6 +10,7 @@ class Post(SqlAlchemyBase):
 
     id = db.Column(db.Integer, primary_key=True, autoincrement=True, nullable=False, index=True)
     poster_id = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=False)
+    public_id = db.Column(db.Integer, db.ForeignKey("publics.id"), nullable=True)
     text = db.Column(db.String, nullable=True, default="")
     likes = db.Column(db.Integer, nullable=False, default=0)
     who_liked = db.Column(db.String, nullable=False, default="")
@@ -19,5 +20,6 @@ class Post(SqlAlchemyBase):
     parent_post = db.Column(db.Integer, nullable=True, default=None)
 
     user = orm.relation("User")
+    public = orm.relation("Public")
     # balance = orm.relation("Balance", back_populates='user', uselist=False)
     # orders = orm.relation("Order", back_populates='user')

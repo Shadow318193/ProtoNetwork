@@ -24,7 +24,7 @@ class User(SqlAlchemyBase, UserMixin):
     # group_id = db.Column(db.Integer, db.ForeignKey("group.id"), nullable=True, index=True, default=None)
     creation_date = db.Column(db.DateTime, default=datetime.now)
     last_auth = db.Column(db.DateTime, default=datetime.now)
-    avatar = db.Column(db.String(128), default=None)
+    avatar = db.Column(db.String, default=None)
     is_from_proton = db.Column(db.Boolean, default=False)
     posts_only_for_friends = db.Column(db.Boolean, default=False)
     talk_only_with_friends = db.Column(db.Boolean, default=False)
