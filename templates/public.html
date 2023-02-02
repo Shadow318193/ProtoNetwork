@@ -28,7 +28,7 @@
             </div>
             {% if current_user.is_authenticated %}
                 <div class="pb-3"></div>
-            {% if admin_tools %}
+            {% if admin_tools or moderator_tools %}
                 <a href="/public/{{ public.id }}/settings" class="btn btn-info" style="width: 18rem;">Настройки группы</a>
             {% else %}
             {% if not is_subscriber %}
@@ -56,6 +56,7 @@
             {% endif %}
         </div>
         <div class="col">
+            <p>Создано: <i>{{ public_creation_time }}</i></p>
             <p>Подписчиков: {{ public.subscribers }}</p>
             {% if current_user.is_authenticated and not current_user.is_banned and admin_tools %}
                 <h3>О сообществе:</h3>

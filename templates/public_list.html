@@ -11,6 +11,7 @@
     <div class="pb-5"></div>
     {% endif %}
     <h1 class="text-center pb-3">Сообщества</h1>
+    {% if current_user.is_authenticated and not current_user.is_banned %}
     <div style="background-color: #cceeff;" class="card p-3">
         <h1 class="text-center pb-3">Создать новое сообщество</h1>
         <form method="post">
@@ -27,6 +28,7 @@
             </div>
         </form>
     </div>
+    {% endif %}
     <h3 class="text-center pb-3">Все группы</h3>
     {% if publics_c %}
         <div class="row pb-3">

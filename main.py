@@ -160,6 +160,7 @@ def user_page(username):
                     return redirect("/user/" + username + "?page=1")
             except ValueError:
                 return redirect("/user/" + username + "?page=1")
+        user_creation_time = make_readble_time(user.creation_date)
         user_time = make_readble_time(user.last_auth)
         if current_user.is_authenticated and user != current_user:
             the_user_is_friend = str(current_user.id) in user.friends.split(", ")
@@ -227,7 +228,7 @@ def user_page(username):
                                    last_n_text=make_text_news(last_n.text) if last_n else None, page=page,
                                    page_max=POSTS_IN_PAGE_MAX, max_page_of_user=max_page_of_user,
                                    comments=comments, comments_posters=comments_posters, comments_time=comments_time,
-                                   comments_likers=comments_likers)
+                                   comments_likers=comments_likers, user_creation_time=user_creation_time)
         elif request.method == "POST":
             if "to_the_beginning_button" in request.form:
                 return redirect("/user/" + username + "?page=" + str(request.form["to_the_beginning_button"]))
@@ -783,6 +784,7 @@ def public_page(public_id):
                     return redirect("/public/" + public_id + "?page=1")
             except ValueError:
                 return redirect("/public/" + public_id + "?page=1")
+        public_creation_time = make_readble_time(public.creation_date)
         public_admins = public.admins.split(", ")
         if "" in public_admins:
             public_admins.remove("")
@@ -866,7 +868,7 @@ def public_page(public_id):
                                    post_media_count=post_media_count, comments=comments, page_max=POSTS_IN_PAGE_MAX,
                                    comments_posters=comments_posters, comments_time=comments_time,
                                    comments_likers=comments_likers, is_subscriber=is_subscriber,
-                                   moderator_tools=moderator_tools)
+                                   moderator_tools=moderator_tools, public_creation_time=public_creation_time)
         elif request.method == "POST":
             if "to_the_beginning_button" in request.form:
                 return redirect("/public/" + public_id + "?page=" + str(request.form["to_the_beginning_button"]))

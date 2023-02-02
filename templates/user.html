@@ -89,7 +89,8 @@
             {% endif %}
         </div>
         <div class="col">
-            <p>В последний раз был в сети: <i>{{ user_time }}</i></p>
+            <p>Зарегистрирован: <i>{{ user_creation_time }}</i></p>
+            <p>В последний раз был(а) в сети: <i>{{ user_time }}</i></p>
             <p>Друзей: {{ user.friends_num }}</p>
             {% if current_user.is_authenticated and current_user == user and not current_user.is_banned %}
                 <h3>Обо мне:</h3>
