@@ -36,6 +36,7 @@ class User(SqlAlchemyBase, UserMixin):
 
     posts = orm.relation("Post", back_populates="user")
     news = orm.relation("News", back_populates="user")
+    messages = orm.relation("Message", back_populates="user")
     # group = orm.relation("Group", back_populates='users')
     # balance = orm.relation("Balance", back_populates='user', uselist=False)
     # orders = orm.relation("Order", back_populates='user')

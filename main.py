@@ -10,6 +10,7 @@ from data.user import User
 from data.post import Post
 from data.news import News
 from data.public import Public
+from data.messages import Message
 
 import datetime
 
@@ -1124,6 +1125,53 @@ def public_list_page():
         return redirect("/public")
 
 
+@app.route("/messages", methods=["POST", "GET"])
+@login_required
+def messages_page():
+    update_user_auth_time()
+    db_sess = db_session.create_session()
+    if request.method == "GET":
+        users = db_sess.query(User).filter(User.id != current_user.id)
+        text_to_search = request.args.get("req")
+        needed_users = []
+        if text_to_search:
+            text_to_search = [x.lower() for x in text_to_search.split("+")]
+            for user in users:
+                for t in text_to_search:
+                    if user.patronymic:
+                        if t in user.name.lower() or t in user.surname.lower() or t in user.login.lower() or \
+                                t in user.patronymic.lower():
+                            needed_users.append(user)
+                    else:
+                        if t in user.name.lower() or t in user.surname.lower() or t in user.login.lower():
+                            needed_users.append(user)
+            users_c = len(needed_users)
+        else:
+            users_c = users.count()
+        return render_template("messages_list.html", current_user=current_user, users=users,
+                               text_to_search=text_to_search, users_c=users_c)
+    elif request.method == "POST":
+        pass
+
+@app.route("/messages/<user_id>", methods=["POST", "GET"])
+@login_required
+def messages_with_user(user_id):
+    update_user_auth_time()
+    db_sess = db_session.create_session()
+    user = db_sess.query(User).filter(user_id == User.id).first()
+    if user:
+        if user.id == current_user.id:
+            flash("Нельзя писать самому себе", "danger")
+            return redirect("/messages")
+        else:
+            if request.method == "GET":
+                return render_template("messages.html", user=user, current_user=current_user)
+            elif request.method == "POST":
+                pass
+    else:
+        flash("Такого пользователя не существует", "danger")
+        return redirect("/messages")
+
 @app.route("/logout")
 @login_required
 def logout():
@@ -1138,8 +1186,13 @@ def logout():
 def go_to_random_user():
     update_user_auth_time()
     db_sess = db_session.create_session()
-    user = random.choice(list(db_sess.query(User)))
-    return redirect("/user/" + user.login)
+    users = db_sess.query(User)
+    if users.count():
+        user = random.choice(list(users))
+        return redirect("/user/" + user.login)
+    else:
+        flash("На данный момент никто не зарегистрирован", "danger")
+        return redirect("/")
 
 
 @app.errorhandler(401)

@@ -1,0 +1,22 @@
+{% extends 'base.html' %}
+{% block main_content %}
+    <h1 class="text-center pb-3">Сообщения с пользователем {{ user.surname }} {{ user.name }}</h1>
+    {% if not current_user.is_banned and not user.is_banned %}
+    <div style="background-color: #cceeff;" class="card p-3">
+        <h1 class="text-center pb-3">Написать сообщение</h1>
+        <form method="post" enctype="multipart/form-data">
+            <div class="form-group mb-5">
+                <label for="text">Введи текст</label>
+                <textarea class="form-control" id="text" name="text" rows="5" placeholder="Текст сообщения"></textarea>
+            </div>
+            <div class="form-group mb-5">
+                <label for="files[]">Приложи медиафайлы (Максимальный размер — {{ max_size }} МБ, максимум файлов — {{ max_count }})</label>
+                <input type=file class="form-control-file" id="files[]" name="files[]" multiple="multiple" accept="{{ accept_files }}">
+            </div>
+            <div class="text-center mb-5">
+                <button type="submit" class="btn btn-primary btn-lg" id="post_button" name="post_button">Отправить</button>
+            </div>
+        </form>
+    </div>
+    {% endif %}
+{% endblock %}
