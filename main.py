@@ -95,9 +95,6 @@ def name_of_public_is_correct(name_s: str):
         return False
     if not name_s.split():
         return False
-    for i in name_s.lower():
-        if i not in "абвгдеёжзийклмнопрстуфхцчшщъыьэюя abcdefghijklmnopqrstuvwxyz":
-            return False
     return True
 
 
