@@ -51,7 +51,10 @@
                                 <h5 class="card-text text-center" style="color: #ff0000;">СМИ</h5>
                             {% endif %}
                             <div class="text-center mt-3">
-                                <a href="/messages/{{ user.id }}" class="btn btn-primary">Посмотреть личные сообщения</a>
+                                <a href="/messages/{{ user.id }}" class="btn btn-info">Посмотреть личные сообщения</a>
+                            </div>
+                            <div class="text-center mt-3">
+                                <a href="/user/{{ user.login }}" class="btn btn-info">Перейти на стену</a>
                             </div>
                         </div>
                     </div>

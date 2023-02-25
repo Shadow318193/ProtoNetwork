@@ -1,6 +1,6 @@
 {% extends 'base.html' %}
 {% block main_content %}
-    <h1 class="text-center pb-3">Сообщения с пользователем {{ user.surname }} {{ user.name }}</h1>
+    <h1 class="text-center pb-3">Сообщения с пользователем {{ user.surname }} {{ user.name }} (@{{ user.login }})</h1>
     {% if not current_user.is_banned and not user.is_banned %}
     <div style="background-color: #cceeff;" class="card p-3">
         <h1 class="text-center pb-3">Написать сообщение</h1>
@@ -18,5 +18,155 @@
             </div>
         </form>
     </div>
+    <div class="pb-5"></div>
     {% endif %}
+    {% for message in messages[(page-1)*page_max:page*page_max] %}
+        {% if message.from_id == current_user.id %}
+        <div style="background-color: #d1e7dd; border-color: #badbcc; color: #0f5132;" class="card p-3 ms-5" id="message_{{ message.id }}">
+            <div class="row pb-3">
+                <div class="col pb-3">
+                    <div>
+                        {% if current_user.avatar == None and not current_user.is_banned %}
+                        <img src="/static/media/default.png" style="object-fit: cover; width: 64px; height: 64px; border-radius: 100px;" class="img-thumbnail" alt="{{ current_user.surname }} {{ current_user.name }}">
+                        {% elif current_user.is_banned %}
+                        <img src="/static/media/ban.jpg" style="object-fit: cover; width: 64px; height: 64px; border-radius: 100px;" class="img-thumbnail" alt="{{ current_user.surname }} {{ current_user.name }}">
+                        {% else %}
+                        <img src="/static/media/from_users/avatars/{{ current_user.avatar }}" style="object-fit: cover; width: 64px; height: 64px; border-radius: 100px;" class="img-thumbnail" alt="{{ current_user.surname }} {{ current_user.name }}">
+                        {% endif %}
+                        {% if current_user.is_teacher %}
+                            <b>{{ current_user.surname }} {{ current_user.name }} {{ current_user.patronymic }}</b> (@{{ current_user.login }})
+                        {% else %}
+                            <b>{{ current_user.surname }} {{ current_user.name }}</b> (@{{ current_user.login }})
+                        {% endif %}
+                    </div>
+                </div>
+                <div class="col pb-3">
+                    <p class="text-end mt-3">Дата публикации: <i>{{ message_time[message.id] }}</i></p>
+                </div>
+            </div>
+            {% if message.text %}
+            <p style="white-space: pre-wrap; padding: 0 3%;" class="pb-3 text-end">{{ message.text }}</p>
+            {% endif %}
+            {% if message_media[message.id] %}
+            <div style="flex-flow: row wrap;" class="d-flex justify-content-evenly pb-3">
+                {% for m in range(message_media_count[message.id]) %}
+                    {% if message_media_type[message.id][m] in media_pics %}
+                        <img class="img-thumbnail" style="max-height: 192px; min-height: 128px;" src="/static/media/from_users/{{ message_media[message.id][m] }}">
+                    {% elif message_media_type[message.id][m] in media_vid %}
+                        <video controls preload="metadata" class="img-thumbnail" style="max-height: 192px; min-height: 128px;" src="/static/media/from_users/{{ message_media[message.id][m] }}"></video>
+                    {% elif message_media_type[message.id][m] in media_aud %}
+                        <audio controls class="p-1" src="/static/media/from_users/{{ message_media[message.id][m] }}"></audio>
+                    {% endif %}
+                {% endfor %}
+            </div>
+            {% endif %}
+            <form method="post" class="row">
+                {% if current_user.id == message.from_id or (current_user.is_admin and not user.is_admin) and not current_user.is_banned %}
+                <div class="col">
+                    <div class="text-center">
+                        <button type="submit" class="btn btn-danger" style="width: 90%;" id="delete_message_button" name="delete_message_button" value="{{ message.id }}">Удалить сообщение</button>
+                    </div>
+                </div>
+                {% endif %}
+            </form>
+            <div class="pb-3"></div>
+        </div>
+        {% else %}
+        <div class="card p-3 me-5" id="message_{{ message.id }}">
+            <div class="row pb-3">
+                <div class="col pb-3">
+                    <div>
+                        {% if user.avatar == None and not user.is_banned %}
+                        <img src="/static/media/default.png" style="object-fit: cover; width: 64px; height: 64px; border-radius: 100px;" class="img-thumbnail" alt="{{ user.surname }} {{ user.name }}">
+                        {% elif user.is_banned %}
+                        <img src="/static/media/ban.jpg" style="object-fit: cover; width: 64px; height: 64px; border-radius: 100px;" class="img-thumbnail" alt="{{ user.surname }} {{ user.name }}">
+                        {% else %}
+                        <img src="/static/media/from_users/avatars/{{ user.avatar }}" style="object-fit: cover; width: 64px; height: 64px; border-radius: 100px;" class="img-thumbnail" alt="{{ user.surname }} {{ user.name }}">
+                        {% endif %}
+                        {% if user.is_teacher %}
+                            <b>{{ user.surname }} {{ user.name }} {{ user.patronymic }}</b> (@{{ user.login }})
+                        {% else %}
+                            <b>{{ user.surname }} {{ user.name }}</b> (@{{ user.login }})
+                        {% endif %}
+                    </div>
+                </div>
+                <div class="col pb-3">
+                    <p class="text-end mt-3">Дата публикации: <i>{{ message_time[message.id] }}</i></p>
+                </div>
+            </div>
+            {% if message.text %}
+            <p style="white-space: pre-wrap; padding: 0 3%;" class="pb-3">{{ message.text }}</p>
+            {% endif %}
+            {% if message_media[message.id] %}
+            <div style="flex-flow: row wrap;" class="d-flex justify-content-evenly pb-3">
+                {% for m in range(message_media_count[message.id]) %}
+                    {% if message_media_type[message.id][m] in media_pics %}
+                        <img class="img-thumbnail" style="max-height: 192px; min-height: 128px;" src="/static/media/from_users/{{ message_media[message.id][m] }}">
+                    {% elif message_media_type[message.id][m] in media_vid %}
+                        <video controls preload="metadata" class="img-thumbnail" style="max-height: 192px; min-height: 128px;" src="/static/media/from_users/{{ message_media[message.id][m] }}"></video>
+                    {% elif message_media_type[message.id][m] in media_aud %}
+                        <audio controls class="p-1" src="/static/media/from_users/{{ message_media[message.id][m] }}"></audio>
+                    {% endif %}
+                {% endfor %}
+            </div>
+            {% endif %}
+            <form method="post" class="row">
+                {% if current_user.is_admin and not user.is_admin and not current_user.is_banned %}
+                <div class="col">
+                    <div class="text-center">
+                        <button type="submit" class="btn btn-danger" style="width: 90%;" id="delete_message_button" name="delete_message_button" value="{{ message.id }}">Удалить сообщение</button>
+                    </div>
+                </div>
+                {% endif %}
+            </form>
+            <div class="pb-3"></div>
+        </div>
+        {% endif %}
+        <div class="pb-5"></div>
+    {% endfor %}
+    <form class="row" method="post">
+        {% if page != 1 %}
+        <div class="col text-center">
+            <button type="submit" class="btn btn-lg btn-info" value="1" id="to_the_beginning_button" name="to_the_beginning_button">1</button>
+        </div>
+        {% else %}
+        <div class="col text-center">
+            <button disabled class="btn btn-lg btn-outline-info">{{ page }}</button>
+        </div>
+        {% endif %}
+        {% if max_page_of_user > 2 %}
+        <div class="col text-center">
+            ...
+        </div>
+        {% endif %}
+        {% if page - 1 > 1 %}
+        <div class="col text-center">
+            <button type="submit" class="btn btn-lg btn-info" value="{{ page - 1 }}" id="to_the_previous_button" name="to_the_previous_button">{{ page - 1 }}</button>
+        </div>
+        {% endif %}
+        {% if page != 1 and page != max_page_of_user %}
+        <div class="col text-center">
+            <button disabled class="btn btn-lg btn-outline-info">{{ page }}</button>
+        </div>
+        {% endif %}
+        {% if page + 1 < max_page_of_user %}
+        <div class="col text-center">
+            <button type="submit" class="btn btn-lg btn-info" value="{{ page + 1 }}" id="to_the_next_button" name="to_the_next_button">{{ page + 1 }}</button>
+        </div>
+        {% endif %}
+        {% if max_page_of_user >= 2 %}
+        <div class="col text-center">
+            ...
+        </div>
+        {% if page != max_page_of_user %}
+        <div class="col text-center">
+            <button type="submit" class="btn btn-lg btn-info" value="{{ max_page_of_user }}" id="to_the_end_button" name="to_the_end_button">{{ max_page_of_user }}</button>
+        </div>
+        {% else %}
+        <div class="col text-center">
+            <button disabled class="btn btn-lg btn-outline-info">{{ page }}</button>
+        </div>
+        {% endif %}
+        {% endif %}
+    </form>
 {% endblock %}

@@ -44,10 +44,10 @@
                                 <h5 class="card-text text-center" style="color: #ff0000;">СМИ</h5>
                             {% endif %}
                             <form method="post" class="text-center mt-3">
-                                <button type="submit" class="btn btn-primary" id="make_friends_button" name="make_friends_button" value="{{ user.id }}">Принять заявку</button>
+                                <button type="submit" class="btn btn-info" id="make_friends_button" name="make_friends_button" value="{{ user.id }}">Принять заявку</button>
                             </form>
                             <form method="post" class="text-center mt-3">
-                                <button type="submit" class="btn btn-primary" id="no_friends_button" name="no_friends_button" value="{{ user.id }}">Отклонить заявку</button>
+                                <button type="submit" class="btn btn-info" id="no_friends_button" name="no_friends_button" value="{{ user.id }}">Отклонить заявку</button>
                             </form>
                         </div>
                     </div>
@@ -91,7 +91,7 @@
                                 <h5 class="card-text text-center" style="color: #ff0000;">СМИ</h5>
                             {% endif %}
                             <div class="text-center mt-3">
-                                <a href="/user/{{ user.login }}" class="btn btn-primary">Перейти на стену</a>
+                                <a href="/user/{{ user.login }}" class="btn btn-info">Перейти на стену</a>
                             </div>
                         </div>
                     </div>

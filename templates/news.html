@@ -24,7 +24,7 @@
     </div>
     <div class="pb-3"></div>
     {% endif %}
-    {% if news %}
+    {% if news_c %}
     {% for n in news[::-1] %}
         <div class="card p-3">
             <p class="text-end">Дата публикации: <i>{{ n_time[n.id] }}</i></p>

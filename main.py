@@ -704,6 +704,7 @@ def news_page():
     db_sess = db_session.create_session()
     if request.method == "GET":
         news = db_sess.query(News)
+        news_c = news.count()
         n_time = {}
         n_media = {}
         n_media_type = {}
@@ -716,7 +717,7 @@ def news_page():
                 n_media_count[n.id] = len(n.media.split(", "))
         return render_template("news.html", current_user=current_user, news=news, n_time=n_time, n_media=n_media,
                                n_media_type=n_media_type, n_media_count=n_media_count, media_pics=POST_MEDIA_PIC_TYPES,
-                               media_vid=POST_MEDIA_VID_TYPES, media_aud=POST_MEDIA_AUD_TYPES,
+                               media_vid=POST_MEDIA_VID_TYPES, media_aud=POST_MEDIA_AUD_TYPES, news_c=news_c,
                                max_size=app.config['MAX_CONTENT_LENGTH'] // 1024 // 1024, max_count=MAX_MEDIA_COUNT)
     elif request.method == "POST":
         if (current_user.is_admin or current_user.is_news_publisher) and not current_user.is_banned and \
@@ -1151,7 +1152,8 @@ def messages_page():
         return render_template("messages_list.html", current_user=current_user, users=users,
                                text_to_search=text_to_search, users_c=users_c)
     elif request.method == "POST":
-        pass
+        return redirect("/messages?req=" + request.form.get("text_to_search").replace(" ", "+"))
+
 
 @app.route("/messages/<user_id>", methods=["POST", "GET"])
 @login_required
@@ -1163,20 +1165,118 @@ def messages_with_user(user_id):
         if user.id == current_user.id:
             flash("Нельзя писать самому себе", "danger")
             return redirect("/messages")
+        elif current_user.talk_only_with_friends and not str(user_id) in current_user.friends.split(", "):
+            flash("На этом аккаунте стоит ограничение на личные сообщения только с друзьями. Чтобы "
+                  "разговаривать с остальными, надо снять галочку в настройке \"Получать сообщения только от друзей\"",
+                  "danger")
+            return redirect("/messages")
+        elif user.talk_only_with_friends and not str(current_user.id) in user.friends.split(", "):
+            flash("Этот пользователь желает общаться только с друзьями", "danger")
+            return redirect("/messages")
         else:
+            messages = db_sess.query(Message).filter((Message.to_id == current_user.id and Message.from_id == user_id) |
+                                                     (Message.from_id == current_user.id and Message.to_id == user_id))
+            messages_c = messages.count()
+            if messages_c:
+                max_page_of_user = messages_c // POSTS_IN_PAGE_MAX
+                if messages_c % POSTS_IN_PAGE_MAX:
+                    max_page_of_user += 1
+            else:
+                max_page_of_user = 1
             if request.method == "GET":
-                return render_template("messages.html", user=user, current_user=current_user)
+                if not request.args.get("page"):
+                    return redirect("/messages/" + user_id + "?page=" + str(max_page_of_user))
+                else:
+                    try:
+                        page = int(request.args["page"])
+                        if page < 1:
+                            return redirect("/messages/" + user_id + "?page=" + str(max_page_of_user))
+                    except ValueError:
+                        return redirect("/messages/" + user_id + "?page=" + str(max_page_of_user))
+                if page > max_page_of_user and page != 1:
+                    return redirect("/messages/" + user_id + "?page=" + str(max_page_of_user))
+                message_time = {}
+                message_media = {}
+                message_media_type = {}
+                message_media_count = {}
+                for message in messages:
+                    message_time[message.id] = make_readble_time(message.creation_date)
+                    if message.media:
+                        message_media[message.id] = message.media.split(", ")
+                        message_media_type[message.id] = message.media_type.split(", ")
+                        message_media_count[message.id] = len(message.media.split(", "))
+                return render_template("messages.html", user=user, current_user=current_user, messages=messages,
+                                       messages_c=messages_c, page=page, max_page_of_user=max_page_of_user,
+                                       message_time=message_time, message_media=message_media, user_id=user_id,
+                                       message_media_type=message_media_type, media_pics=POST_MEDIA_PIC_TYPES,
+                                       media_vid=POST_MEDIA_VID_TYPES, media_aud=POST_MEDIA_AUD_TYPES,
+                                       message_media_count=message_media_count, page_max=POSTS_IN_PAGE_MAX)
             elif request.method == "POST":
-                pass
+                if "to_the_beginning_button" in request.form:
+                    return redirect("/messages/" + user_id + "?page=" + str(request.form["to_the_beginning_button"]))
+                elif "to_the_end_button" in request.form:
+                    return redirect("/messages/" + user_id + "?page=" + str(request.form["to_the_end_button"]))
+                elif "to_the_previous_button" in request.form:
+                    return redirect("/messages/" + user_id + "?page=" + str(request.form["to_the_previous_button"]))
+                elif "to_the_next_button" in request.form:
+                    return redirect("/messages/" + user_id + "?page=" + str(request.form["to_the_next_button"]))
+                elif "post_button" in request.form and not current_user.is_banned:
+                    message = Message()
+                    files = request.files.getlist("files[]")
+                    too_many_files = False
+                    if files:
+                        media = []
+                        media_type = []
+                        f_count = 0
+                        for file in files:
+                            if allowed_type(file.filename, POST_MEDIA_TYPES) and f_count < MAX_MEDIA_COUNT:
+                                filename = str(time()).replace(".", "_") + "_" + str(f_count) + "." + \
+                                           file.filename.rsplit('.', 1)[1].lower()
+                                file.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
+                                media.append(filename)
+                                media_type.append(filename.rsplit('.', 1)[1].lower())
+                                f_count += 1
+                            elif f_count >= MAX_MEDIA_COUNT:
+                                too_many_files = True
+                                break
+                        if media:
+                            message.media = ", ".join(media)
+                        if media_type:
+                            message.media_type = ", ".join(media_type)
+                    message.from_id = current_user.id
+                    message.to_id = user_id
+                    message.text = request.form["text"]
+                    db_sess.add(message)
+                    db_sess.commit()
+                    if too_many_files:
+                        flash("Сообщение отправлено, но был превышен лимит файлов на один пост, поэтому"
+                              " часть из них была отброшена", "warning")
+                    else:
+                        flash("Сообщение успешно отправлено", "success")
+                    return redirect("/messages/" + user_id + "?page=" + str(max_page_of_user))
+                elif "delete_message_button" in request.form and not current_user.is_banned:
+                    message = db_sess.query(Message).filter(Message.id == request.form["delete_message_button"]).first()
+                    if message.from_id == current_user.id or current_user.is_admin:
+                        if message.media:
+                            files_to_delete = message.media.split(", ")
+                            for f in files_to_delete:
+                                if os.path.isfile("static/media/from_users/" + f):
+                                    os.remove("static/media/from_users/" + f)
+                        db_sess.delete(message)
+                        db_sess.commit()
+                        flash("Пост успешно удалён", "success")
+                    else:
+                        flash("Нельзя удалить этот пост", "danger")
+                return redirect("/messages/" + user_id + "?page=" + str(max_page_of_user))
     else:
-        flash("Такого пользователя не существует", "danger")
-        return redirect("/messages")
+        abort(404)
 
 @app.route("/logout")
 @login_required
 def logout():
     update_user_auth_time()
     logout_user()
+    flash("Успешный выход")
     if request.args.get("from"):
         return redirect(request.args.get("from"))
     return redirect("/")
