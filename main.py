@@ -1174,9 +1174,13 @@ def messages_with_user(user_id):
             flash("Этот пользователь желает общаться только с друзьями", "danger")
             return redirect("/messages")
         else:
-            messages = db_sess.query(Message).filter((Message.to_id == current_user.id and Message.from_id == user_id) |
-                                                     (Message.from_id == current_user.id and Message.to_id == user_id))
-            messages_c = messages.count()
+            messages = db_sess.query(Message)
+            needed_messages = []
+            for m in messages:
+                if (m.from_id == current_user.id and m.to_id == int(user_id)) or \
+                   (m.to_id == current_user.id and m.from_id == int(user_id)):
+                    needed_messages.append(m)
+            messages_c = len(needed_messages)
             if messages_c:
                 max_page_of_user = messages_c // POSTS_IN_PAGE_MAX
                 if messages_c % POSTS_IN_PAGE_MAX:
@@ -1205,7 +1209,7 @@ def messages_with_user(user_id):
                         message_media[message.id] = message.media.split(", ")
                         message_media_type[message.id] = message.media_type.split(", ")
                         message_media_count[message.id] = len(message.media.split(", "))
-                return render_template("messages.html", user=user, current_user=current_user, messages=messages,
+                return render_template("messages.html", user=user, current_user=current_user, messages=needed_messages,
                                        messages_c=messages_c, page=page, max_page_of_user=max_page_of_user,
                                        message_time=message_time, message_media=message_media, user_id=user_id,
                                        message_media_type=message_media_type, media_pics=POST_MEDIA_PIC_TYPES,
