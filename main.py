@@ -85,7 +85,18 @@ def name_is_correct(name_s: str):
     if not name_s.split() or len(name_s) > 32:
         return False
     for i in name_s.lower():
-        if i not in "абвгдеёжзийклмнопрстуфхцчшщъыьэюя":
+        if i not in "абвгдеёжзийклмнопрстуфхцчшщъыьэюя ":
+            return False
+    return True
+
+
+def name_of_public_is_correct(name_s: str):
+    if not name_s:
+        return False
+    if not name_s.split():
+        return False
+    for i in name_s.lower():
+        if i not in "абвгдеёжзийклмнопрстуфхцчшщъыьэюя abcdefghijklmnopqrstuvwxyz":
             return False
     return True
 
@@ -1054,7 +1065,7 @@ def public_settings(public_id):
                     public.avatar = None
                     db_sess.commit()
                 elif "set_button" in request.form:
-                    if name_is_correct(request.form.get("name")):
+                    if name_of_public_is_correct(request.form.get("name")):
                         public.name = request.form["name"]
                     elif request.form.get("name") != "" and request.form.get("name") != None:
                         error_message += "\nНазванием"
