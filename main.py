@@ -571,15 +571,6 @@ def friends():
             last_n_time = make_readble_time(last_n.creation_date)
         else:
             last_n_time = None
-        print(requested_users)
-        print(friends_users)
-        print(requested_users_real)
-        print(friends_users_real)
-        print(users_req_c)
-        print(users_friends_c)
-        print(needed_req_users)
-        print(needed_friends)
-        print(text_to_search)
         return render_template("friends.html",
                                users_req=needed_req_users, users_friends=needed_friends, current_user=current_user,
                                users_req_c=users_req_c, users_friends_c=users_friends_c, users_req_l=requested_users,
