@@ -45,6 +45,9 @@
             {% if current_user.login == user.login %}
                 <a href="/settings" class="btn btn-info" style="width: 18rem;">Настройки аккаунта</a>
             {% else %}
+                <div class="pb-2">
+                    <a href="/messages/{{ user.id }}" class="btn btn-info" style="width: 18rem;">Посмотреть личные сообщения</a>
+                </div>
             {% if current_user.is_admin %}
             {% if not user.is_admin %}
             {% if user.is_news_publisher %}
