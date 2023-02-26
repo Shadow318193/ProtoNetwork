@@ -529,17 +529,60 @@ def friends():
         requested_users.remove("")
     if "" in friends_users:
         friends_users.remove("")
+    text_to_search = request.args.get("req")
+    needed_req_users = []
+    needed_friends = []
     requested_users_real = db_sess.query(User).filter(User.id != current_user.id)
     friends_users_real = db_sess.query(User).filter(User.id != current_user.id)
+    if text_to_search:
+        text_to_search = [x.lower() for x in text_to_search.split("+")]
+        for user in requested_users_real:
+            if str(user.id) in requested_users:
+                for t in text_to_search:
+                    if user.patronymic:
+                        if t in user.name.lower() or t in user.surname.lower() or t in user.login.lower() or \
+                                t in user.patronymic.lower():
+                            needed_req_users.append(user)
+                    else:
+                        if t in user.name.lower() or t in user.surname.lower() or t in user.login.lower():
+                            needed_req_users.append(user)
+        for user in friends_users_real:
+            if str(user.id) in friends_users:
+                for t in text_to_search:
+                    if user.patronymic:
+                        if t in user.name.lower() or t in user.surname.lower() or t in user.login.lower() or \
+                                t in user.patronymic.lower():
+                            needed_friends.append(user)
+                    else:
+                        if t in user.name.lower() or t in user.surname.lower() or t in user.login.lower():
+                            needed_friends.append(user)
+    else:
+        for user in requested_users_real:
+            if str(user.id) in requested_users:
+                needed_req_users.append(user)
+        for user in friends_users_real:
+            if str(user.id) in friends_users:
+                needed_friends.append(user)
+    users_req_c = len(needed_req_users)
+    users_friends_c = len(needed_friends)
     if request.method == "GET":
         last_n = db_sess.query(News).get(db_sess.query(News).count())
         if last_n:
             last_n_time = make_readble_time(last_n.creation_date)
         else:
             last_n_time = None
-        return render_template("friends.html", users_req=requested_users_real, users_friends=friends_users_real,
-                               current_user=current_user, users_req_c=len(requested_users),
-                               users_friends_c=len(friends_users), users_req_l=requested_users,
+        print(requested_users)
+        print(friends_users)
+        print(requested_users_real)
+        print(friends_users_real)
+        print(users_req_c)
+        print(users_friends_c)
+        print(needed_req_users)
+        print(needed_friends)
+        print(text_to_search)
+        return render_template("friends.html",
+                               users_req=needed_req_users, users_friends=needed_friends, current_user=current_user,
+                               users_req_c=users_req_c, users_friends_c=users_friends_c, users_req_l=requested_users,
                                users_friends_l=friends_users, last_n=last_n, last_n_time=last_n_time,
                                last_n_text=make_text_news(last_n.text) if last_n else None)
     elif request.method == "POST":
@@ -578,6 +621,8 @@ def friends():
                 my_user.friends_req = ", ".join(requested_users)
                 db_sess.commit()
                 flash("Отказано в дружбе", "success")
+        elif request.form.get("text_to_search"):
+            return redirect("/friends?req=" + request.form.get("text_to_search").replace(" ", "+"))
         else:
             flash("Нехорошо рыться в HTML для деструктивных действий", "danger")
         return redirect("/friends")
