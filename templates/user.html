@@ -59,13 +59,31 @@
                     <button type="submit" class="btn btn-info" style="width: 18rem;" id="make_user_news_pub_button" name="make_user_news_pub_button">Дать возможность пользователю публиковать новости</button>
                 </form>
             {% endif %}
+            {% if not user.is_from_proton and not user.is_teacher %}
+                <form class="pb-4" method="post">
+                    <button type="submit" class="btn btn-info" style="width: 18rem;" id="make_user_pupil" name="make_user_pupil">Дать роль ученика</button>
+                    <input class="form-control mt-2" style="width: 18rem;" type="text" id="grade" name="grade" placeholder="Класс">
+                    <input class="form-control mt-2" style="width: 18rem;" type="text" id="letter" name="letter" placeholder="Буква">
+                </form>
+                <form class="pb-2" method="post">
+                    <button type="submit" class="btn btn-info" style="width: 18rem;" id="make_user_teacher" name="make_user_teacher">Дать роль учителя</button>
+                </form>
+            {% elif user.is_from_proton and not user.is_teacher %}
+                <form class="pb-2" method="post">
+                    <button type="submit" class="btn btn-info" style="width: 18rem;" id="unmake_user_pupil" name="unmake_user_pupil">Отобрать роль ученика</button>
+                </form>
+            {% elif user.is_teacher %}
+                <form class="pb-2" method="post">
+                    <button type="submit" class="btn btn-info" style="width: 18rem;" id="unmake_user_teacher" name="unmake_user_teacher">Отобрать роль учителя</button>
+                </form>
+            {% endif %}
             {% endif %}
             {% if user.is_banned %}
                 <form class="pb-2" method="post">
                     <button type="submit" class="btn btn-info" style="width: 18rem;" id="unban_user_button" name="unban_user_button">Разбанить пользователя</button>
                 </form>
             {% else %}
-                <form class="pb-2" method="post">
+                <form class="pb-4" method="post">
                     <button type="submit" class="btn btn-info" style="width: 18rem;" id="ban_user_button" name="ban_user_button">Забанить пользователя</button>
                     <input class="form-control mt-2" style="width: 18rem;" type="text" id="reason_text" name="reason_text" placeholder="Причина">
                 </form>

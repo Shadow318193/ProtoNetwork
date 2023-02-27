@@ -109,6 +109,28 @@ def login_is_correct(login_s: str):
     return True
 
 
+def letter_is_correct(letter_s: str):
+    if len(letter_s) != 1:
+        return False
+    if not letter_s.split():
+        return False
+    for i in letter_s.lower():
+        if i not in "абвгдеёжзийклмнопрстуфхцчшщъыьэюя":
+            return False
+    return True
+
+
+def grade_is_correct(grade_s: str):
+    if len(grade_s) > 2 or len(grade_s) < 1:
+        return False
+    if not grade_s.split():
+        return False
+    for i in grade_s.lower():
+        if i not in "0123456789":
+            return False
+    return True
+
+
 def password_is_correct(password: str):
     if password.islower() or password.isupper() or len(password) < 8:
         return False
@@ -357,14 +379,46 @@ def user_page(username):
                             flash("Пост успешно удалён", "success")
                         else:
                             flash("Нельзя удалить этот пост", "danger")
-                    elif "unmake_user_news_pub_button" in request.form and current_user.is_news_publisher and not user.is_banned:
+                    elif "unmake_user_news_pub_button" in request.form and user.is_news_publisher and \
+                            not user.is_banned and current_user.is_admin:
                         user.is_news_publisher = False
                         db_sess.commit()
                         flash("У пользователя отобрана возможность публиковать новости", "success")
-                    elif "make_user_news_pub_button" in request.form and not current_user.is_news_publisher and not user.is_banned:
+                    elif "make_user_news_pub_button" in request.form and not user.is_news_publisher and \
+                            not user.is_banned and current_user.is_admin:
                         user.is_news_publisher = True
                         db_sess.commit()
                         flash("Пользователю дана возможность публиковать новости", "success")
+                    elif "unmake_user_pupil" in request.form and user.is_from_proton and \
+                            not user.is_banned and current_user.is_admin:
+                        user.is_from_proton = False
+                        user.grade = None
+                        db_sess.commit()
+                        flash("У пользователя отобрана роль ученика", "success")
+                    elif "make_user_pupil" in request.form and not user.is_from_proton and \
+                            not user.is_banned and current_user.is_admin:
+                        if request.form.get("grade") and request.form.get("letter"):
+                            if grade_is_correct(request.form["grade"]) and letter_is_correct(request.form["letter"]):
+                                user.is_from_proton = True
+                                user.grade = request.form["grade"] + request.form["letter"].upper()
+                                db_sess.commit()
+                                flash("Пользователю дана роль ученика", "success")
+                            else:
+                                flash("Поле класса заполнено неправильно", "danger")
+                        else:
+                            flash("Нужно заполнить данные о классе ученика", "danger")
+                    elif "unmake_user_teacher" in request.form and user.is_teacher and \
+                            not user.is_banned and current_user.is_admin:
+                        user.is_from_proton = False
+                        user.is_teacher = False
+                        db_sess.commit()
+                        flash("У пользователя отобрана роль учителя", "success")
+                    elif "make_user_teacher" in request.form and not user.is_teacher and \
+                            not user.is_banned and current_user.is_admin:
+                        user.is_from_proton = True
+                        user.is_teacher = True
+                        db_sess.commit()
+                        flash("Пользователю дана роль учителя", "success")
                     elif "comment_button" in request.form and not user.posts_only_for_friends and \
                             not current_user.is_banned and not user.is_banned:
                         if request.form.get("comment_text").replace(" ", ""):
@@ -461,6 +515,11 @@ def settings():
                     user.surname = request.form["surname"]
                 elif request.form.get("surname") != "" and request.form.get("surname") != None:
                     error_message += "\nФамилией"
+                    all_is_ok = False
+                if name_is_correct(request.form.get("patronymic")):
+                    user.surname = request.form["patronymic"]
+                elif request.form.get("patronymic") != "" and request.form.get("patronymic") != None:
+                    error_message += "\nОтчеством"
                     all_is_ok = False
                 if login_is_correct(request.form.get("login")):
                     existing_user = db_sess.query(User).filter(User.login == request.form["login"]).first()
@@ -1318,6 +1377,7 @@ def messages_with_user(user_id):
                 return redirect("/messages/" + user_id + "?page=" + str(max_page_of_user))
     else:
         abort(404)
+
 
 @app.route("/logout")
 @login_required

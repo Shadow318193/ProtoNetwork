@@ -21,7 +21,6 @@ class User(SqlAlchemyBase, UserMixin):
     is_admin = db.Column(db.Boolean, default=False)
     is_teacher = db.Column(db.Boolean, default=False)
     is_news_publisher = db.Column(db.Boolean, default=False)
-    # group_id = db.Column(db.Integer, db.ForeignKey("group.id"), nullable=True, index=True, default=None)
     creation_date = db.Column(db.DateTime, default=datetime.now)
     last_auth = db.Column(db.DateTime, default=datetime.now)
     avatar = db.Column(db.String, default=None)
@@ -33,6 +32,7 @@ class User(SqlAlchemyBase, UserMixin):
     friends = db.Column(db.String, nullable=False, default="")
     friends_num = db.Column(db.Integer, nullable=False, default=0)
     friends_req = db.Column(db.String, nullable=False, default="")
+    grade = db.Column(db.String, nullable=True)
 
     posts = orm.relation("Post", back_populates="user")
     news = orm.relation("News", back_populates="user")
