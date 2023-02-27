@@ -1427,7 +1427,7 @@ def messages_with_user(user_id):
 def logout():
     update_user_auth_time()
     logout_user()
-    flash("Успешный выход")
+    flash("Успешный выход", "success")
     if request.args.get("from"):
         return redirect(request.args.get("from"))
     return redirect("/")
