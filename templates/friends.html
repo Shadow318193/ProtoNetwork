@@ -52,7 +52,7 @@
                             <button type="submit" class="btn btn-info" id="make_friends_button" name="make_friends_button" value="{{ user.id }}">Принять заявку</button>
                         </form>
                         <form method="post" class="text-center mt-3">
-                            <button type="submit" class="btn btn-info" id="no_friends_button" name="no_friends_button" value="{{ user.id }}">Отклонить заявку</button>
+                            <button type="submit" class="btn btn-info" id="no_friends_button" name="not_friends_button" value="{{ user.id }}">Отклонить заявку</button>
                         </form>
                     </div>
                 </div>
@@ -103,5 +103,47 @@
         </div>
     {% else %}
         <h3 class="pb-3 text-center">Друзей нет</h3>
+    {% endif %}
+    {% if users_pos_friends_c %}
+        <h3 class="pb-3">Возможные друзья:</h3>
+        <div class="row pb-3">
+            <div class="card p-3" style="overflow: auto; display: flex; flex-direction: row;">
+        {% for user in users_pos_friends %}
+                <div class="card" style="min-width: 18rem; width: 20rem; margin: 0 5px;">
+                    {% if user.avatar == None and not user.is_banned %}
+                    <img src="/static/media/default.png" width="256" height="256" style="margin: 0 auto;" class="img-thumbnail mt-3" alt="{{ user.surname }} {{ user.name }}">
+                    {% elif user.is_banned %}
+                    <img src="/static/media/ban.jpg" width="256" height="256" style="margin: 0 auto;" class="img-thumbnail mt-3" alt="{{ user.surname }} {{ user.name }}">
+                    {% else %}
+                    <img src="/static/media/from_users/avatars/{{ user.avatar }}" style="object-fit: cover; width: 256px; height: 256px; margin: 0 auto;" class="img-thumbnail mt-3" alt="{{ user.surname }} {{ user.name }}">
+                    {% endif %}
+                    <div class="card-body">
+                        {% if user.is_from_proton %}
+                        {% if user.is_teacher %}
+                        <h5 class="card-title text-center">{{ user.surname }} {{ user.name }} {{ user.patronymic }}</h5>
+                        <p class="card-text text-center">Учитель</p>
+                        {% else %}
+                        <h5 class="card-title text-center">{{ user.surname }} {{ user.name }}</h5>
+                        <p class="card-text text-center">Ученик</p>
+                        {% endif %}
+                        {% else %}
+                        <h5 class="card-title text-center">{{ user.surname }} {{ user.name }}</h5>
+                        <p class="card-text text-center">Гость</p>
+                        {% endif %}
+                        {% if user.is_admin %}
+                        <h5 class="card-text text-center" style="color: #ff0000;">Администратор</h5>
+                        {% elif user.is_news_publisher %}
+                        <h5 class="card-text text-center" style="color: #ff0000;">СМИ</h5>
+                        {% endif %}
+                        <form method="post">
+                            <button type="submit" class="btn btn-info" style="width: 18rem;" id="friend_request_button" name="friend_request_button" value="{{ user.id }}">Отправить запрос в друзья</button>
+                        </form>
+                    </div>
+                </div>
+        {% endfor %}
+            </div>
+        </div>
+    {% else %}
+        <h3 class="pb-3 text-center">Возможных друзей нет</h3>
     {% endif %}
 {% endblock %}

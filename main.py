@@ -591,8 +591,14 @@ def friends():
     text_to_search = request.args.get("req")
     needed_req_users = []
     needed_friends = []
+    needed_possible_friends = []
     requested_users_real = db_sess.query(User).filter(User.id != current_user.id)
     friends_users_real = db_sess.query(User).filter(User.id != current_user.id)
+    if current_user.grade:
+        pos_friends_users_real = db_sess.query(User).filter(User.id != current_user.id,
+                                                            User.grade == current_user.grade)
+    else:
+        pos_friends_users_real = None
     if text_to_search:
         text_to_search = [x.lower() for x in text_to_search.split("+")]
         for user in requested_users_real:
@@ -615,6 +621,18 @@ def friends():
                     else:
                         if t in user.name.lower() or t in user.surname.lower() or t in user.login.lower():
                             needed_friends.append(user)
+        if pos_friends_users_real:
+            for user in pos_friends_users_real:
+                if str(current_user.id) not in user.friends_req.split(", ") and str(user.id) not in requested_users \
+                        and str(user.id) not in friends_users:
+                    for t in text_to_search:
+                        if user.patronymic:
+                            if t in user.name.lower() or t in user.surname.lower() or t in user.login.lower() or \
+                                    t in user.patronymic.lower():
+                                needed_possible_friends.append(user)
+                        else:
+                            if t in user.name.lower() or t in user.surname.lower() or t in user.login.lower():
+                                needed_possible_friends.append(user)
     else:
         for user in requested_users_real:
             if str(user.id) in requested_users:
@@ -622,8 +640,14 @@ def friends():
         for user in friends_users_real:
             if str(user.id) in friends_users:
                 needed_friends.append(user)
+        if pos_friends_users_real:
+            for user in pos_friends_users_real:
+                if str(current_user.id) not in user.friends_req.split(", ") and str(user.id) not in requested_users \
+                        and str(user.id) not in friends_users:
+                    needed_possible_friends.append(user)
     users_req_c = len(needed_req_users)
     users_friends_c = len(needed_friends)
+    users_pos_friends_c = len(needed_possible_friends)
     if request.method == "GET":
         last_n = db_sess.query(News).get(db_sess.query(News).count())
         if last_n:
@@ -633,24 +657,35 @@ def friends():
         return render_template("friends.html",
                                users_req=needed_req_users, users_friends=needed_friends, current_user=current_user,
                                users_req_c=users_req_c, users_friends_c=users_friends_c, users_req_l=requested_users,
-                               users_friends_l=friends_users, last_n=last_n, last_n_time=last_n_time,
-                               last_n_text=make_text_news(last_n.text) if last_n else None)
+                               users_pos_friends=needed_possible_friends, users_pos_friends_c=users_pos_friends_c,
+                               users_pos_friends_l=pos_friends_users_real, users_friends_l=friends_users, last_n=last_n,
+                               last_n_time=last_n_time, last_n_text=make_text_news(last_n.text) if last_n else None)
     elif request.method == "POST":
-        if "make_friends_button" in request.form or "not_friends_button" in request.form:
+        if "make_friends_button" in request.form or "not_friends_button" in request.form or \
+                "friend_request_button" in request.form:
             if "make_friends_button" in request.form:
                 if request.form["make_friends_button"] == current_user.id:
                     flash("Нехорошо рыться в HTML для деструктивных действий", "danger")
                     return redirect("/friends")
                 the_user = db_sess.query(User).filter(User.id == request.form["make_friends_button"]).first()
-                if not the_user or str(the_user.id) not in requested_users:
+                if not the_user or str(the_user.id) not in requested_users or str(the_user.id) in friends_users:
                     flash("Нехорошо рыться в HTML для деструктивных действий", "danger")
                     return redirect("/friends")
             elif "not_friends_button" in request.form:
                 if request.form["not_friends_button"] == current_user.id:
                     flash("Нехорошо рыться в HTML для деструктивных действий", "danger")
                     return redirect("/friends")
-                the_user = db_sess.query(User).filter(User.id == request.form["no_friends_button"]).first()
-                if not the_user or str(the_user.id) not in friends_users:
+                the_user = db_sess.query(User).filter(User.id == request.form["not_friends_button"]).first()
+                if not the_user or str(the_user.id) not in requested_users  or str(the_user.id) in friends_users:
+                    flash("Нехорошо рыться в HTML для деструктивных действий", "danger")
+                    return redirect("/friends")
+            elif "friend_request_button" in request.form:
+                if request.form["friend_request_button"] == current_user.id:
+                    flash("Нехорошо рыться в HTML для деструктивных действий", "danger")
+                    return redirect("/friends")
+                the_user = db_sess.query(User).filter(User.id == request.form["friend_request_button"]).first()
+                if not the_user or str(the_user.id) in friends_users or \
+                        str(current_user.id) in the_user.friends_req.split(", "):
                     flash("Нехорошо рыться в HTML для деструктивных действий", "danger")
                     return redirect("/friends")
             my_user = db_sess.query(User).filter(User.id == current_user.id).first()
@@ -666,11 +701,19 @@ def friends():
                 the_user.friends_num += 1
                 db_sess.commit()
                 flash("Теперь вы друзья", "success")
-            elif "no_friends_button" in request.form:
+            elif "not_friends_button" in request.form:
                 requested_users.remove(str(the_user.id))
                 my_user.friends_req = ", ".join(requested_users)
                 db_sess.commit()
                 flash("Отказано в дружбе", "success")
+            elif "friend_request_button" in request.form:
+                new_req = the_user.friends_req.split(", ")
+                if "" in new_req:
+                    new_req.remove("")
+                new_req.append(str(current_user.id))
+                the_user.friends_req = ", ".join(new_req)
+                db_sess.commit()
+                flash("Заявка отправлена", "success")
         elif request.form.get("text_to_search"):
             return redirect("/friends?req=" + request.form.get("text_to_search").replace(" ", "+"))
         else:
