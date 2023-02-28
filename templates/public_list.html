@@ -35,7 +35,7 @@
         <div class="row pb-3">
             <div class="card p-3" style="overflow: auto; display: flex; flex-direction: row;">
         {% for public in publics[::-1] %}
-                    <div class="card" style="width: 18rem;">
+                    <div class="card" style="min-width: 18rem; width: 18rem; margin: 0 5px;;">
                     {% if public.avatar == None and not public.is_banned %}
                     <img src="/static/media/default.png" width="256" height="256" style="margin: 0 auto;" class="img-thumbnail mt-3" alt="{{ public.name }}">
                     {% elif public.is_banned %}
@@ -59,7 +59,7 @@
         <div class="row pb-3">
             <div class="card p-3" style="overflow: auto; display: flex; flex-direction: row;">
         {% for public in publics_subscribed %}
-                    <div class="card" style="width: 18rem;">
+                    <div class="card" style="min-width: 18rem; width: 18rem; margin: 0 5px;">
                     {% if public.avatar == None and not public.is_banned %}
                     <img src="/static/media/default.png" width="256" height="256" style="margin: 0 auto;" class="img-thumbnail mt-3" alt="{{ public.name }}">
                     {% elif public.is_banned %}
@@ -88,7 +88,7 @@
         <div class="row pb-3">
             <div class="card p-3" style="overflow: auto; display: flex; flex-direction: row;">
         {% for public in publics_admin_or_mod %}
-                    <div class="card" style="width: 18rem;">
+                    <div class="card" style="min-width: 18rem; width: 18rem; margin: 0 5px;">
                     {% if public.avatar == None and not public.is_banned %}
                     <img src="/static/media/default.png" width="256" height="256" style="margin: 0 auto;" class="img-thumbnail mt-3" alt="{{ public.name }}">
                     {% elif public.is_banned %}
