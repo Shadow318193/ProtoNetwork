@@ -23,6 +23,7 @@ from platform import release
 PYTHONANYWHERE = False
 is_xp = True if release() == "XP" and not PYTHONANYWHERE else False
 school_name = "ГБОУ Образовательный центр \"Протон\"" if not PYTHONANYWHERE else None
+signup_is_on = True
 
 AVATAR_TYPES = ["png", "jpg", "jpeg", "gif"]
 POST_MEDIA_PIC_TYPES = ["png", "jpg", "jpeg", "gif"]
@@ -174,7 +175,7 @@ def index():
     update_user_auth_time()
     if current_user.is_authenticated:
         return redirect("/user/" + current_user.login)
-    return render_template("index.html", school_name=school_name)
+    return render_template("index.html", school_name=school_name, signup_is_on=signup_is_on)
 
 
 @app.route("/user/<username>", methods=["POST", "GET"])
@@ -727,49 +728,57 @@ def signup():
     update_user_auth_time()
     if request.method == "GET":
         if current_user.is_authenticated:
-            return redirect("/user/" + current_user.login)
+            return redirect("/")
+        if not signup_is_on:
+            flash("Администрация отключила регистрацию", "danger")
+            return redirect("/")
         return render_template("signup.html")
     elif request.method == "POST":
-        if not name_is_correct(request.form["name"]):
-            flash("Ошибка регистрации: имя не удовлетворяет требованию", "danger")
-            return redirect("/signup")
-        elif not name_is_correct(request.form["surname"]):
-            flash("Ошибка регистрации: фамилия не удовлетворяет требованию", "danger")
-            return redirect("/signup")
-        elif not login_is_correct(request.form["login"]):
-            flash("Ошибка регистрации: логин не удовлетворяет требованию", "danger")
-            return redirect("/signup")
-        elif len(request.form["email"]) > 64:
-            flash("Ошибка регистрации: электронная почта не удовлетворяет требованию", "danger")
-            return redirect("/signup")
-        if request.form["password"] == request.form["password_sec"] and password_is_correct(request.form["password"]):
-            db_sess = db_session.create_session()
-            existing_user = db_sess.query(User).filter(User.login == request.form["login"]).first()
-            if existing_user:
-                flash("Ошибка регистрации: кто-то уже есть с таким логином", "danger")
+        if signup_is_on:
+            if not name_is_correct(request.form["name"]):
+                flash("Ошибка регистрации: имя не удовлетворяет требованию", "danger")
                 return redirect("/signup")
-            existing_user = db_sess.query(User).filter(User.email == request.form["email"]).first()
-            if existing_user:
-                flash("Ошибка регистрации: кто-то уже есть с такой почтой", "danger")
+            elif not name_is_correct(request.form["surname"]):
+                flash("Ошибка регистрации: фамилия не удовлетворяет требованию", "danger")
                 return redirect("/signup")
-            user = User()
-            user.name = request.form["name"]
-            user.surname = request.form["surname"]
-            user.email = request.form["email"]
-            user.login = request.form["login"]
-            user.hashed_password = generate_password_hash(request.form["password"])
-            db_sess.add(user)
-            db_sess.commit()
-            login_user(user)
-            user.last_auth = datetime.datetime.now()
-            flash("Регистрация прошла успешно!", "success")
-            return redirect("/user/" + user.login)
-        elif password_is_correct(request.form["password"]):
-            flash("Ошибка регистрации: пароль не повторён", "danger")
-            return redirect("/signup")
+            elif not login_is_correct(request.form["login"]):
+                flash("Ошибка регистрации: логин не удовлетворяет требованию", "danger")
+                return redirect("/signup")
+            elif len(request.form["email"]) > 64:
+                flash("Ошибка регистрации: электронная почта не удовлетворяет требованию", "danger")
+                return redirect("/signup")
+            if request.form["password"] == request.form["password_sec"] and \
+                    password_is_correct(request.form["password"]):
+                db_sess = db_session.create_session()
+                existing_user = db_sess.query(User).filter(User.login == request.form["login"]).first()
+                if existing_user:
+                    flash("Ошибка регистрации: кто-то уже есть с таким логином", "danger")
+                    return redirect("/signup")
+                existing_user = db_sess.query(User).filter(User.email == request.form["email"]).first()
+                if existing_user:
+                    flash("Ошибка регистрации: кто-то уже есть с такой почтой", "danger")
+                    return redirect("/signup")
+                user = User()
+                user.name = request.form["name"]
+                user.surname = request.form["surname"]
+                user.email = request.form["email"]
+                user.login = request.form["login"]
+                user.hashed_password = generate_password_hash(request.form["password"])
+                db_sess.add(user)
+                db_sess.commit()
+                login_user(user)
+                user.last_auth = datetime.datetime.now()
+                flash("Регистрация прошла успешно!", "success")
+                return redirect("/user/" + user.login)
+            elif password_is_correct(request.form["password"]):
+                flash("Ошибка регистрации: пароль не повторён", "danger")
+                return redirect("/signup")
+            else:
+                flash("Ошибка регистрации: пароль не удовлетворяет требованию", "danger")
+                return redirect("/signup")
         else:
-            flash("Ошибка регистрации: пароль не удовлетворяет требованию", "danger")
-            return redirect("/signup")
+            flash("Администрация отключила регистрацию", "danger")
+            return redirect("/")
 
 
 @app.route("/login", methods=["POST", "GET"])

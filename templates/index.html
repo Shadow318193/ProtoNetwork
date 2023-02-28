@@ -21,10 +21,16 @@
         <h2 class="text-center pb-5">Данный экземпляр ПротоСети принадлежит создателю. Это значит, что он не привязан ни к одной из организаций, а социальная сеть становится обычной.</h2>
     {% endif %}
     <h2 class="text-center pb-5">Для связи осталось сделать только один шаг:</h2>
+    {% if signup_is_on %}
     <div class="text-center"><a href="/signup" class="btn btn-info btn-lg">Зарегистрироваться</a></div>
     <h4 class="text-center">или</h4>
+    {% endif %}
     <div class="text-center"><a href="/login" class="btn btn-info btn-lg">Войти</a></div>
     <h4 class="text-center">или</h4>
     <div class="text-center"><a href="/random" class="btn btn-info btn-lg">Хочу посмотреть чей-то случайный аккаунт</a></div>
+    {% if not signup_is_on %}
+    <div class="pb-5"></div>
+    <h2 class="text-center">Регистрация в этом экземпляре ПротоСети отключена</h2>
+    {% endif %}
 
 {% endblock %}
