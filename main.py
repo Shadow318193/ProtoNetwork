@@ -22,6 +22,7 @@ from platform import release
 
 PYTHONANYWHERE = False
 is_xp = True if release() == "XP" and not PYTHONANYWHERE else False
+school_name = "ГБОУ Образовательный центр \"Протон\"" if not PYTHONANYWHERE else None
 
 AVATAR_TYPES = ["png", "jpg", "jpeg", "gif"]
 POST_MEDIA_PIC_TYPES = ["png", "jpg", "jpeg", "gif"]
@@ -173,7 +174,7 @@ def index():
     update_user_auth_time()
     if current_user.is_authenticated:
         return redirect("/user/" + current_user.login)
-    return render_template("index.html")
+    return render_template("index.html", school_name=school_name)
 
 
 @app.route("/user/<username>", methods=["POST", "GET"])
