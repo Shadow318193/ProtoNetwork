@@ -178,6 +178,11 @@ def index():
     return render_template("index.html", school_name=school_name, signup_is_on=signup_is_on)
 
 
+@app.route("/robots.txt")
+def robots():
+    return "<pre>" + open("robots.txt").read() + "</pre>"
+
+
 @app.route("/user/<username>", methods=["POST", "GET"])
 def user_page(username):
     update_user_auth_time()
