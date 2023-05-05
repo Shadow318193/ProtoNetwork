@@ -20,21 +20,12 @@ from time import time
 
 from platform import release
 
-PYTHONANYWHERE = False
-is_xp = True if release() == "XP" and not PYTHONANYWHERE else False
-school_name = "ГБОУ Образовательный центр \"Протон\"" if not PYTHONANYWHERE else None
-signup_is_on = True
 
 AVATAR_TYPES = ["png", "jpg", "jpeg", "gif"]
 POST_MEDIA_PIC_TYPES = ["png", "jpg", "jpeg", "gif"]
 POST_MEDIA_VID_TYPES = ["webm", "mp4"]
 POST_MEDIA_AUD_TYPES = ["mp3", "wav"]
 POST_MEDIA_TYPES = POST_MEDIA_VID_TYPES + POST_MEDIA_PIC_TYPES + POST_MEDIA_AUD_TYPES
-MAX_MEDIA_COUNT = 8 if not PYTHONANYWHERE else 5
-POSTS_IN_PAGE_MAX = 10
-
-PICS_404 = ["masha.png", "johnny.gif"]
-PICS_500 = ["masyanya.png", "vovka.png", "baby.jpg", "fedor.png"]
 
 
 def make_accept_for_html(mime: str):
@@ -165,9 +156,18 @@ def allowed_type(filename, types):
            filename.rsplit('.', 1)[1].lower() in types
 
 
+PYTHONANYWHERE = False
+is_xp = True if release() == "XP" and not PYTHONANYWHERE else False
+school_name = "ГБОУ Образовательный центр \"Протон\"" if not PYTHONANYWHERE else None
+signup_is_on = True
 app.config['SECRET_KEY'] = 'secret_key'
 app.config['UPLOAD_FOLDER'] = 'static/media/from_users'
 app.config['MAX_CONTENT_LENGTH'] = 128 * 1024 * 1024 if not PYTHONANYWHERE else 16 * 1024 * 1024
+MAX_MEDIA_COUNT = 8 if not PYTHONANYWHERE else 5
+POSTS_IN_PAGE_MAX = 10
+
+PICS_404 = ["masha.png", "johnny.gif"]
+PICS_500 = ["masyanya.png", "vovka.png", "baby.jpg", "fedor.png"]
 
 
 @app.route("/", methods=["GET"])

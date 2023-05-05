@@ -13,13 +13,13 @@
     <h1 class="text-center pb-3">Сообщество</h1>
     <div class="row pb-3">
         <div class="col pb-3">
-            <div class="card" style="width: 18rem;">
+            <div class="card" style="max-width: 18rem;">
                 {% if public.avatar == None and not public.is_banned %}
-                    <img src="/static/media/default.png" width="256" height="256" style="margin: 0 auto;" class="img-thumbnail mt-3" alt="{{ public.name }}">
+                    <img src="/static/media/default.png" width="256" height="256" style="margin: 0 auto; width: 90%; max-width: 256px;" class="img-thumbnail mt-3" alt="{{ public.name }}">
                 {% elif public.is_banned %}
-                    <img src="/static/media/ban.jpg" width="256" height="256" style="margin: 0 auto;" class="img-thumbnail mt-3" alt="{{ public.name }}">
+                    <img src="/static/media/ban.jpg" width="256" height="256" style="margin: 0 auto; width: 90%; max-width: 256px;" class="img-thumbnail mt-3" alt="{{ public.name }}">
                 {% else %}
-                    <img src="/static/media/from_users/avatars/{{ public.avatar }}" style="object-fit: cover; width: 256px; height: 256px; margin: 0 auto;" class="img-thumbnail mt-3" alt="{{ public.name }}">
+                    <img src="/static/media/from_users/avatars/{{ public.avatar }}" style="object-fit: cover; width: 90%; height: 256px; margin: 0 auto; max-width: 256px;" class="img-thumbnail mt-3" alt="{{ public.name }}">
                 {% endif %}
                 <div class="card-body">
                     <h5 class="card-title text-center">{{ public.name }}</h5>
@@ -29,26 +29,26 @@
             {% if current_user.is_authenticated %}
                 <div class="pb-3"></div>
             {% if admin_tools or moderator_tools %}
-                <a href="/public/{{ public.id }}/settings" class="btn btn-info" style="width: 18rem;">Настройки группы</a>
+                <a href="/public/{{ public.id }}/settings" class="btn btn-info" style="width: 100%; max-width: 18rem;">Настройки группы</a>
             {% else %}
             {% if not is_subscriber %}
                 <form class="pb-2" method="post">
-                    <button type="submit" class="btn btn-info" style="width: 18rem;" id="subscribe_button" name="subscribe_button">Подписаться</button>
+                    <button type="submit" class="btn btn-info" style="width: 100%; max-width: 18rem;" id="subscribe_button" name="subscribe_button">Подписаться</button>
                 </form>
             {% else %}
                 <form class="pb-2" method="post">
-                    <button type="submit" class="btn btn-info" style="width: 18rem;" id="subscribe_button" name="subscribe_button">Отписаться</button>
+                    <button type="submit" class="btn btn-info" style="width: 100%; max-width: 18rem;" id="subscribe_button" name="subscribe_button">Отписаться</button>
                 </form>
             {% endif %}
             {% if current_user.is_admin %}
             {% if public.is_banned %}
                 <form class="pb-2" method="post">
-                    <button type="submit" class="btn btn-info" style="width: 18rem;" id="unban_public_button" name="unban_public_button">Разбанить группу</button>
+                    <button type="submit" class="btn btn-info" style="width: 100%; max-width: 18rem;" id="unban_public_button" name="unban_public_button">Разбанить группу</button>
                 </form>
             {% else %}
                 <form class="pb-2" method="post">
-                    <button type="submit" class="btn btn-info" style="width: 18rem;" id="ban_public_button" name="ban_public_button">Забанить группу</button>
-                    <input class="form-control mt-2" style="width: 18rem;" type="text" id="reason_text" name="reason_text" placeholder="Причина">
+                    <button type="submit" class="btn btn-info" style="width: 100%; max-width: 18rem;" id="ban_public_button" name="ban_public_button">Забанить группу</button>
+                    <input class="form-control mt-2" style="width: 100%; max-width: 18rem;" type="text" id="reason_text" name="reason_text" placeholder="Причина">
                 </form>
             {% endif %}
             {% endif %}
@@ -121,15 +121,15 @@
                 </div>
             </div>
             {% if post.text %}
-            <p style="white-space: pre-wrap; padding: 0 3%;" class="pb-3">{{ post.text }}</p>
+            <p style="white-space: pre-wrap; padding: 0 3%; font-size: calc( (100vw - 480px)/(1280 - 480) * (24 - 16) + 16px);" class="pb-3">{{ post.text }}</p>
             {% endif %}
             {% if post_media[post.id] %}
             <div style="flex-flow: row wrap;" class="d-flex justify-content-evenly pb-3">
                 {% for m in range(post_media_count[post.id]) %}
                     {% if post_media_type[post.id][m] in media_pics %}
-                        <img class="img-thumbnail" style="max-height: 192px; min-height: 128px;" src="/static/media/from_users/{{ post_media[post.id][m] }}">
+                        <img class="img-thumbnail" style="width: 50%; min-width: 192px;" src="/static/media/from_users/{{ post_media[post.id][m] }}">
                     {% elif post_media_type[post.id][m] in media_vid %}
-                        <video controls preload="metadata" class="img-thumbnail" style="max-height: 192px; min-height: 128px;" src="/static/media/from_users/{{ post_media[post.id][m] }}"></video>
+                        <video controls preload="metadata" class="img-thumbnail" style="width: 50%; min-width: 192px;" src="/static/media/from_users/{{ post_media[post.id][m] }}"></video>
                     {% elif post_media_type[post.id][m] in media_aud %}
                         <audio controls class="p-1" src="/static/media/from_users/{{ post_media[post.id][m] }}"></audio>
                     {% endif %}
