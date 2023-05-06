@@ -95,15 +95,15 @@
                 </div>
             </div>
             {% if message.text %}
-            <p style="white-space: pre-wrap; padding: 0 3%;" class="pb-3">{{ message.text }}</p>
+            <p style="white-space: pre-wrap; padding: 0 3%; font-size: calc( (100vw - 480px)/(1280 - 480) * (24 - 16) + 16px);" class="pb-3">{{ message.text }}</p>
             {% endif %}
             {% if message_media[message.id] %}
             <div style="flex-flow: row wrap;" class="d-flex justify-content-evenly pb-3">
                 {% for m in range(message_media_count[message.id]) %}
                     {% if message_media_type[message.id][m] in media_pics %}
-                        <img class="img-thumbnail" style="max-height: 192px; min-height: 128px;" src="/static/media/from_users/{{ message_media[message.id][m] }}">
+                        <img class="img-thumbnail" style="width: 50%; min-width: 192px;" src="/static/media/from_users/{{ message_media[message.id][m] }}">
                     {% elif message_media_type[message.id][m] in media_vid %}
-                        <video controls preload="metadata" class="img-thumbnail" style="max-height: 192px; min-height: 128px;" src="/static/media/from_users/{{ message_media[message.id][m] }}"></video>
+                        <video controls preload="metadata" class="img-thumbnail" style="width: 50%; min-width: 192px;" src="/static/media/from_users/{{ message_media[message.id][m] }}"></video>
                     {% elif message_media_type[message.id][m] in media_aud %}
                         <audio controls class="p-1" src="/static/media/from_users/{{ message_media[message.id][m] }}"></audio>
                     {% endif %}
